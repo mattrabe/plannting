@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 export interface IFertilizer {
   _id: string,
   name: string,
+  type: 'liquid' | 'granules',
+  isOrganic: boolean,
   notes: string | null,
   nitrogen: number,
   phosphorus: number,
@@ -19,6 +21,15 @@ export const fertilizerSchema = new mongoose.Schema<IFertilizer>({
     type: String,
     required: true,
     trim: true,
+  },
+  type: {
+    type: String,
+    enum: ['liquid', 'granules'],
+    required: true,
+  },
+  isOrganic: {
+    type: Boolean,
+    required: true,
   },
   notes: {
     type: String,

@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 export interface IPlant {
   _id: string,
   name: string,
+  notes: string | null,
   activities: mongoose.Types.ObjectId[],
   plantedAt: Date,
   createdAt: Date,
