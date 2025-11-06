@@ -4,7 +4,7 @@ import { Fertilizer } from '../../models'
 
 import { publicProcedure } from '../../procedures/publicProcedure'
 
-export const getFertilizers = publicProcedure
+export const listFertilizers = publicProcedure
   .input(z.object({
     q: z.string().optional(),
   })

@@ -25,9 +25,8 @@ export default function App() {
           <StatusBar style="auto" />
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.appTitle}>Plannting</Text>
-            <Text style={styles.subtitle}>MongoDB Status Monitor</Text>
 
-            <StatusDisplay />
+            <HealthDisplay />
 
             <FertilizersDisplay />
 
@@ -47,15 +46,15 @@ export default function App() {
   );
 }
 
-function StatusDisplay() {
+function HealthDisplay() {
   const {
-    data: status,
+    data: health,
     isLoading,
     error,
     isError,
     refetch,
     isRefetching
-  } = trpc.status.useQuery(undefined, {
+  } = trpc.health.useQuery(undefined, {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
@@ -87,7 +86,7 @@ function StatusDisplay() {
   return (
     <View style={[styles.statusContainer, styles.successContainer]}>
       <View style={styles.header}>
-        <Text style={styles.title}>API Status</Text>
+        <Text style={styles.title}>API Health</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => refetch()}
@@ -100,10 +99,10 @@ function StatusDisplay() {
       </View>
       <View style={styles.statusInfo}>
         <Text style={styles.statusText}>
-          <Text style={styles.label}>MongoDB Status:</Text> {status?.db.mongo.status}
+          <Text style={styles.label}>MongoDB Status:</Text> {health?.db.mongo.status}
         </Text>
         <Text style={styles.statusText}>
-          <Text style={styles.label}>Timestamp:</Text> {status?.timestamp}
+          <Text style={styles.label}>Timestamp:</Text> {health?.timestamp}
         </Text>
       </View>
     </View>
@@ -118,7 +117,7 @@ function FertilizersDisplay() {
     isError,
     refetch,
     isRefetching
-  } = trpc.getFertilizers.useQuery({ q: ''}, {
+  } = trpc.fertilizers.list.useQuery({ q: ''}, {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
@@ -186,7 +185,7 @@ function PlantsDisplay() {
     isError,
     refetch,
     isRefetching
-  } = trpc.getPlants.useQuery({ q: ''}, {
+  } = trpc.plants.list.useQuery({ q: ''}, {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
@@ -280,12 +279,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
     color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#666',
   },
   statusContainer: {
     padding: 20,

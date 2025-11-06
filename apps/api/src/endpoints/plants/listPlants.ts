@@ -8,7 +8,7 @@ import {
 
 import { publicProcedure } from '../../procedures/publicProcedure'
 
-export const getPlants = publicProcedure
+export const listPlants = publicProcedure
   .input(z.object({
     q: z.string().optional(),
   })
