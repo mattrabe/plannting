@@ -138,6 +138,12 @@ Returns the MongoDB connection status.
 - The shared package ensures type consistency between all applications
 - The API server handles all database connections and business logic
 
+## Deploying
+
+This app is deployed using Vercel automatically, any time a PR is merged into the `main` branch.
+
+See Vercel project here: https://vercel.com/matt-rabe/plannting-api
+
 ## Scripts Reference
 
 | Command | Description |
