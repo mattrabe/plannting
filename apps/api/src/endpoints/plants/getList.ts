@@ -1,9 +1,23 @@
-import { Plant } from '../../models/Plant'
+import {
+  Plant,
+  type IActivity,
+  type IFertilizer,
+} from '../../models'
 
 import { publicProcedure } from '../../procedures/publicProcedure'
 
 export const plantsGetList = publicProcedure.query(async () => {
-  const plants = await Plant.find().populate('activities')
+  const plants = await Plant.find()
+    .populate<{ activities: (IActivity & { fertilizer: IFertilizer })[] }>({
+      path: 'activities',
+      populate: {
+        path: 'fertilizer',
+      },
+      select: '-plant',
+    })
 
-  return { plants: plants.map(plant => plant.toObject()) }
+
+  const payload = { plants: plants.map(plant => plant.toObject()) }
+
+  return payload
 })

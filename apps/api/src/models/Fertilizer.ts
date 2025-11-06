@@ -1,6 +1,18 @@
 import mongoose from 'mongoose'
 
-import type { IFertilizer } from './types'
+export interface IFertilizer {
+  _id: string,
+  name: string,
+  notes: string | null,
+  nitrogen: number,
+  phosphorus: number,
+  potassium: number,
+  createdAt: Date,
+  updatedAt: Date,
+  deletedAt: Date | null,
+}
+
+// export type DocIFertilizer = mongoose.Document & Omit<IFertilizer, '_id' | 'createdAt' | 'updatedAt'>
 
 export const fertilizerSchema = new mongoose.Schema<IFertilizer>({
   name: {
@@ -23,12 +35,6 @@ export const fertilizerSchema = new mongoose.Schema<IFertilizer>({
     type: Number,
     required: true,
   },
-  activities: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: 'Activity',
-  },
 }, { timestamps: true })
 
 export const Fertilizer = mongoose.model<IFertilizer>('Fertilizer', fertilizerSchema)
-
-export * from './types'
