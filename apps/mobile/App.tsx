@@ -28,7 +28,7 @@ export default function App() {
             <Text style={styles.subtitle}>MongoDB Status Monitor</Text>
 
             <StatusDisplay />
-            <UsersDisplay />
+            <PlantsDisplay />
 
             <View style={styles.infoContainer}>
               <Text style={styles.infoTitle}>About</Text>
@@ -107,7 +107,7 @@ function StatusDisplay() {
   );
 }
 
-function UsersDisplay() {
+function PlantsDisplay() {
   const {
     data,
     isLoading,
@@ -115,7 +115,7 @@ function UsersDisplay() {
     isError,
     refetch,
     isRefetching
-  } = trpc.users.useQuery(undefined, {
+  } = trpc.plants.useQuery(undefined, {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
@@ -123,7 +123,7 @@ function UsersDisplay() {
   if (isLoading) {
     return (
       <View style={styles.statusContainer}>
-        <Text style={styles.loadingText}>Loading users...</Text>
+        <Text style={styles.loadingText}>Loading plants...</Text>
       </View>
     );
   }
@@ -147,7 +147,7 @@ function UsersDisplay() {
   return (
     <View style={[styles.statusContainer, styles.successContainer]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Users</Text>
+        <Text style={styles.title}>Plants</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => refetch()}
@@ -158,14 +158,33 @@ function UsersDisplay() {
           </Text>
         </TouchableOpacity>
       </View>
-      {data?.users?.map((user, index) => (
-        <View key={user._id || index} style={styles.statusInfo}>
+      {data?.plants?.map((plant, index) => (
+        <View key={plant._id || index} style={styles.statusInfo}>
           <Text style={styles.statusText}>
-            <Text style={styles.label}>Name:</Text> {user.name}
+            <Text style={styles.label}>Name:</Text> {plant.name}
           </Text>
           <Text style={styles.statusText}>
-            <Text style={styles.label}>Phone:</Text> {user.phone}
+            <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toISOString() || 'unknown'}
           </Text>
+
+          <Text style={styles.statusText}></Text>
+          <Text style={styles.label}>Activities ({plant.activities.length}):</Text>
+          {plant.activities.map((activity, index) => (
+            <View key={activity._id || index}>
+              <Text style={styles.statusText}>
+                <Text style={styles.label}>{activity.fertilizer.toString()}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
+              </Text>
+              <Text style={styles.statusText}>
+                {activity.notes}
+              </Text>
+              <Text style={styles.statusText}>
+                <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toISOString() || 'unknown'}
+              </Text>
+              <Text style={styles.statusText}>
+                <Text style={styles.label}>History:</Text> 'unknown'
+              </Text>
+            </View>
+          ))}
         </View>
       ))}
     </View>
