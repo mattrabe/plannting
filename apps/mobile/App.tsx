@@ -28,6 +28,9 @@ export default function App() {
             <Text style={styles.subtitle}>MongoDB Status Monitor</Text>
 
             <StatusDisplay />
+
+            <FertilizersDisplay />
+
             <PlantsDisplay />
 
             <View style={styles.infoContainer}>
@@ -84,7 +87,7 @@ function StatusDisplay() {
   return (
     <View style={[styles.statusContainer, styles.successContainer]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Database Status</Text>
+        <Text style={styles.title}>API Status</Text>
         <TouchableOpacity
           style={styles.refreshButton}
           onPress={() => refetch()}
@@ -97,12 +100,80 @@ function StatusDisplay() {
       </View>
       <View style={styles.statusInfo}>
         <Text style={styles.statusText}>
-          <Text style={styles.label}>Status:</Text> {status?.db.mongo.status}
+          <Text style={styles.label}>MongoDB Status:</Text> {status?.db.mongo.status}
         </Text>
         <Text style={styles.statusText}>
           <Text style={styles.label}>Timestamp:</Text> {status?.timestamp}
         </Text>
       </View>
+    </View>
+  );
+}
+
+function FertilizersDisplay() {
+  const {
+    data,
+    isLoading,
+    error,
+    isError,
+    refetch,
+    isRefetching
+  } = trpc.getFertilizers.useQuery({ q: ''}, {
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1,
+  });
+
+  if (isLoading) {
+    return (
+      <View style={styles.statusContainer}>
+        <Text style={styles.loadingText}>Loading fertilizers...</Text>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={[styles.statusContainer, styles.errorContainer]}>
+        <Text style={styles.errorText}>
+          Error: {error?.message || 'Unknown error'}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refetch()}
+        >
+          <Text style={styles.buttonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.statusContainer, styles.successContainer]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Fertilizers</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={() => refetch()}
+          disabled={isRefetching}
+        >
+          <Text style={styles.buttonText}>
+            {isRefetching ? 'Refreshing...' : 'Refresh'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {!data?.fertilizers?.length ? (
+        <Text style={styles.listItemText}>No fertilizers found.</Text>
+      ) : data?.fertilizers?.map((fertilizer, index) => (
+        <View key={fertilizer._id} style={styles.listItem}>
+          <Text style={styles.listItemText}>
+            <Text style={styles.label}>Name:</Text> {fertilizer.name}, {fertilizer.type}{fertilizer.isOrganic ? ' (Organic)' : ''}
+          </Text>
+          <Text style={styles.listItemText}>
+            <Text style={styles.label}>Notes:</Text> {fertilizer.notes}
+          </Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -115,7 +186,7 @@ function PlantsDisplay() {
     isError,
     refetch,
     isRefetching
-  } = trpc.plants.useQuery(undefined, {
+  } = trpc.getPlants.useQuery({ q: ''}, {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
@@ -158,29 +229,32 @@ function PlantsDisplay() {
           </Text>
         </TouchableOpacity>
       </View>
-      {data?.plants?.map((plant, index) => (
-        <View key={plant._id || index} style={styles.statusInfo}>
-          <Text style={styles.statusText}>
+
+      {!data?.plants?.length ? (
+        <Text style={styles.listItemText}>No plants found.</Text>
+      ) : data?.plants?.map((plant, index) => (
+        <View key={plant._id} style={styles.listItem}>
+          <Text style={styles.listItemText}>
             <Text style={styles.label}>Name:</Text> {plant.name}
           </Text>
-          <Text style={styles.statusText}>
+          <Text style={styles.listItemText}>
             <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
           </Text>
 
-          <Text style={styles.statusText}></Text>
+          <Text style={styles.listItemText}></Text>
           <Text style={styles.label}>Activities ({plant.activities.length}):</Text>
           {plant.activities.map((activity, index) => (
-            <View key={activity._id || index}>
-              <Text style={styles.statusText}>
+            <View key={activity._id}>
+              <Text style={styles.listItemText}>
                 <Text style={styles.label}>{activity.fertilizer.name}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
               </Text>
-              <Text style={styles.statusText}>
+              <Text style={styles.listItemText}>
                 {activity.notes}
               </Text>
-              <Text style={styles.statusText}>
+              <Text style={styles.listItemText}>
                 <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toLocaleString('en-US') || 'unknown'}
               </Text>
-              <Text style={styles.statusText}>
+              <Text style={styles.listItemText}>
                 <Text style={styles.label}>History:</Text> unknown
               </Text>
             </View>
@@ -243,6 +317,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statusText: {
+    fontSize: 14,
+    color: '#155724',
+  },
+  listItem: {
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#ccc',
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  listItemText: {
     fontSize: 14,
     color: '#155724',
   },

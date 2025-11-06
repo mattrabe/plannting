@@ -1,17 +1,19 @@
 import { router } from '../trpc'
 
-import { healthGet } from '../endpoints/health/get'
-import { statusGet } from '../endpoints/status/get'
-import { plantsGetList } from '../endpoints/plants/getList'
-// import { usersGetList } from '../endpoints/users/getList'
+import { health } from '../endpoints/health'
+import { status } from '../endpoints/status'
+import { getFertilizers } from '../endpoints/fertilizers/getFertilizers'
+import { getPlants } from '../endpoints/plants/getPlants'
+// import { getUsers } from '../endpoints/users/getUsers'
 
 // Main app router
 export const trpcRouter = router({
-  health: healthGet,
-  status: statusGet,
+  health,
+  status,
 
-  plants: plantsGetList,
-//  users: usersGetList,
+  getFertilizers,
+  getPlants,
+//  getUsers,
 })
 
 export type TrpcRouter = typeof trpcRouter

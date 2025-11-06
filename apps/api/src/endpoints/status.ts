@@ -1,8 +1,8 @@
-import { mongo } from '../../db'
+import { mongo } from '../db'
 
-import { publicProcedure } from '../../procedures/publicProcedure'
+import { publicProcedure } from '../procedures/publicProcedure'
 
-export const statusGet = publicProcedure.query((async (opts) => {
+export const status = publicProcedure.query((async (opts) => {
   const mongoStatus = await mongo.rawClient
     .db()
     .command({ ping: 1 })
