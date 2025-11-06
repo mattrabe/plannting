@@ -1,0 +1,30 @@
+{
+  "name": "@plannting/mobile",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "watchman watch-del './' && watchman watch-project './' && expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.89.0",
+    "@trpc/client": "^11.5.1",
+    "@trpc/react-query": "^11.5.1",
+    "expo": "~54.0.10",
+    "expo-status-bar": "~3.0.8",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "superjson": "^1.13.3",
+    "zod": "^4.1.9"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "@plannting/api": "*",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
