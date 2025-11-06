@@ -1,0 +1,28 @@
+{
+  "name": "plannting-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\"",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "build": "npm run build --workspace=apps/api",
+    "build:api": "npm run build --workspace=apps/api",
+    "start": "concurrently \"npm run start:api\"",
+    "start:api": "npm run start --workspace=apps/api",
+    "lint": "npm run lint --workspace=apps/api",
+    "lint:api": "npm run lint --workspace=apps/api",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "install:all": "npm install && npm install --workspace=apps/api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}
