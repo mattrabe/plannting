@@ -1,6 +1,24 @@
 import mongoose from 'mongoose'
 
-import type { IActivity } from './types'
+export interface IActivity {
+  _id: string,
+
+  plant: mongoose.Types.ObjectId,
+
+  fertilizer: mongoose.Types.ObjectId,
+  fertilizerAmount: string | null,
+
+  recurAmount: number | null,
+  recurUnit: string | null,
+  recurNextDate: Date | null,
+
+  notes: string | null,
+
+  createdAt: Date,
+  updatedAt: Date,
+}
+
+// export type DocIActivity = mongoose.Document & Omit<IActivity, '_id' | 'createdAt' | 'updatedAt'>
 
 export const activitySchema = new mongoose.Schema<IActivity>({
   notes: {
@@ -29,5 +47,3 @@ export const activitySchema = new mongoose.Schema<IActivity>({
 }, { timestamps: true })
 
 export const Activity = mongoose.model<IActivity>('Activity', activitySchema)
-
-export * from './types'

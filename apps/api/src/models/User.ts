@@ -1,8 +1,17 @@
 import mongoose from 'mongoose'
 
-import type { IUser } from './types'
+export interface IUser {
+  _id: string,
+  name: string,
+  phone: string,
+  password: string,
+  createdAt: Date,
+  updatedAt: Date,
+}
 
-const userSchema = new mongoose.Schema<IUser>({
+// export type DocIUser = mongoose.Document & Omit<IUser, '_id' | 'createdAt' | 'updatedAt'>
+
+export const userSchema = new mongoose.Schema<IUser>({
   name: {
     type: String,
     required: true,
@@ -24,5 +33,3 @@ const userSchema = new mongoose.Schema<IUser>({
 }, { timestamps: true })
 
 export const User = mongoose.model<IUser>('User', userSchema)
-
-export * from './types'

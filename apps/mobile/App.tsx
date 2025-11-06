@@ -164,7 +164,7 @@ function PlantsDisplay() {
             <Text style={styles.label}>Name:</Text> {plant.name}
           </Text>
           <Text style={styles.statusText}>
-            <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toISOString() || 'unknown'}
+            <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
           </Text>
 
           <Text style={styles.statusText}></Text>
@@ -172,16 +172,16 @@ function PlantsDisplay() {
           {plant.activities.map((activity, index) => (
             <View key={activity._id || index}>
               <Text style={styles.statusText}>
-                <Text style={styles.label}>{activity.fertilizer.toString()}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
+                <Text style={styles.label}>{activity.fertilizer.name}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
               </Text>
               <Text style={styles.statusText}>
                 {activity.notes}
               </Text>
               <Text style={styles.statusText}>
-                <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toISOString() || 'unknown'}
+                <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toLocaleString('en-US') || 'unknown'}
               </Text>
               <Text style={styles.statusText}>
-                <Text style={styles.label}>History:</Text> 'unknown'
+                <Text style={styles.label}>History:</Text> unknown
               </Text>
             </View>
           ))}
