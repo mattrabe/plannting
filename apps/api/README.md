@@ -25,11 +25,13 @@ The API server expects a MongoDB Atlas connection string. Make sure your MongoDB
 ### 3. Running the Server
 
 #### Development
+
 ```bash
 npm run dev
 ```
 
 #### Production
+
 ```bash
 npm run build
 npm start
@@ -40,9 +42,11 @@ npm start
 The API server runs on `http://localhost:3000` by default, with tRPC endpoints exposed under `http://localhost:3000/trpc/**`.
 
 ### GET /trpc/health
+
 Health check endpoint.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
