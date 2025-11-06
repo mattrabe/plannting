@@ -37,6 +37,8 @@ npm start
 
 ## Endpoints
 
+The API server runs on `http://localhost:3000` by default, with tRPC endpoints exposed under `http://localhost:3000/trpc/**`.
+
 ### GET /trpc/health
 Health check endpoint.
 
@@ -44,16 +46,6 @@ Health check endpoint.
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-09-16T21:44:06.841Z"
-}
-```
-
-### GET /trpc/status
-MongoDB connection status.
-
-**Success Response:**
-```json
-{
   "db": {
     "mongo": {
       "status": "connected",
@@ -61,20 +53,7 @@ MongoDB connection status.
       "timestamp": "2025-09-16T21:44:09.851Z"
     }
   }
-}
-```
-
-**Error Response:**
-```json
-{
-  "db": {
-    "mongo": {
-      "status": "disconnected",
-      "message": "MongoDB connection failed",
-      "error": "Connection error details",
-      "timestamp": "2025-09-16T21:44:09.851Z"
-    }
-  }
+  "timestamp": "2025-09-16T21:44:06.841Z"
 }
 ```
 

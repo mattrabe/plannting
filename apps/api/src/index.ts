@@ -51,7 +51,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 API server running on http://localhost:${PORT}`)
   console.log(`📊 Health check endpoint: http://localhost:${PORT}/trpc/health`)
-  console.log(`🔍 Status endpoint: http://localhost:${PORT}/trpc/status`)
   console.log(`\nWaiting for requests...\n`)
 })
 

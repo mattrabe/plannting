@@ -96,38 +96,7 @@ npm run lint
 ### Shared Package (`packages/shared`)
 - **MOVED!**: This was moved into duplicate code in the separate apps for now.
 - **Purpose**: Shared TypeScript types and utilities
-- **Exports**: Common interfaces like `ApiStatus` and `Config`
-
-## API Endpoints
-
-The API server runs on `http://localhost:3000` by default.
-
-### GET /health
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "timestamp": "2025-09-16T21:29:07.595Z"
-}
-```
-
-### GET /status
-Returns the MongoDB connection status.
-
-**Response:**
-```json
-{
-  "db": {
-    "mongo": {
-      "status": "connected",
-      "message": "MongoDB connection established successfully",
-      "timestamp": "2025-09-16T20:48:05.028Z"
-    }
-  }
-}
-```
+- **Exports**: Common interfaces like `Config`
 
 ## Development Notes
 
