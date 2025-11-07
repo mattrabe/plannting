@@ -26,9 +26,11 @@ export default function App() {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.appTitle}>Plannting</Text>
 
-            <FertilizersDisplay />
+            <ChoresDisplay />
 
             <PlantsDisplay />
+
+            <FertilizersDisplay />
 
             <HealthDisplay />
           </ScrollView>
@@ -1307,7 +1309,7 @@ function PlantsDisplay() {
                                 </Text>
                               )}
                               <Text style={styles.listItemText}>
-                                <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleString('en-US') : 'unknown'}
+                                <Text style={styles.label}>Next Date:</Text> <Text style={chore.recurNextDate && new Date(chore.recurNextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-US') : 'unknown'}</Text>
                               </Text>
                               <Text style={styles.listItemText}>
                                 <Text style={styles.label}>History:</Text> unknown
@@ -1320,6 +1322,128 @@ function PlantsDisplay() {
                   </View>
                 )}
               </>
+            )}
+          </View>
+        )
+      })}
+    </View>
+  );
+}
+
+function ChoresDisplay() {
+  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
+
+  const {
+    data,
+    isLoading,
+    error,
+    isError,
+    refetch,
+    isRefetching
+  } = trpc.chores.list.useQuery({ q: ''}, {
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1,
+  });
+
+  const toggleExpand = (choreId: string) => {
+    setExpandedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(choreId)) {
+        newSet.delete(choreId)
+      } else {
+        newSet.add(choreId)
+      }
+      return newSet
+    })
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.statusContainer}>
+        <Text style={styles.loadingText}>Loading chores...</Text>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={[styles.statusContainer, styles.errorContainer]}>
+        <Text style={styles.errorText}>
+          Error: {error?.message || 'Unknown error'}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refetch()}
+        >
+          <Text style={styles.buttonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.statusContainer, styles.successContainer]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Chores</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={() => refetch()}
+          disabled={isRefetching}
+        >
+          <Text style={styles.buttonText}>
+            {isRefetching ? 'Refreshing...' : 'Refresh'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {!data?.chores?.length ? (
+        <Text style={styles.listItemText}>No chores found.</Text>
+      ) : data?.chores?.map((chore, index) => {
+        const isExpanded = expandedIds.has(chore._id)
+
+        return (
+          <View key={chore._id} style={styles.listItem}>
+            <TouchableOpacity
+              style={styles.expandableHeader}
+              onPress={() => toggleExpand(chore._id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
+              <Text style={styles.listItemText}>
+                <Text style={styles.label}>
+                  <Text style={chore.recurNextDate && new Date(chore.recurNextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-US') : 'unknown'}</Text> {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+            {isExpanded && (
+              <View style={styles.expandedContent}>
+                <Text style={styles.listItemText}>
+                  <Text style={styles.label}>Plant:</Text> {chore.plant?.name || 'Unknown'}
+                </Text>
+                <Text style={styles.listItemText}>
+                  <Text style={styles.label}>Fertilizer:</Text> {chore.fertilizer?.name || 'Unknown'}
+                </Text>
+                {chore.fertilizerAmount && (
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>Amount:</Text> {chore.fertilizerAmount}
+                  </Text>
+                )}
+                {chore.recurAmount && chore.recurUnit && (
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>Recurrence:</Text> Every {chore.recurAmount} {chore.recurUnit}
+                  </Text>
+                )}
+                {chore.recurNextDate && (
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>Next Date:</Text> <Text style={chore.recurNextDate < new Date() ? styles.errorText : styles.listItemText}>{new Date(chore.recurNextDate).toLocaleDateString('en-US')}</Text>
+                  </Text>
+                )}
+                {chore.notes && (
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>Notes:</Text> {chore.notes}
+                  </Text>
+                )}
+              </View>
             )}
           </View>
         )
