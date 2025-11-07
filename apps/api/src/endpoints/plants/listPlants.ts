@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import {
   Plant,
-  type IActivity,
+  type IChore,
   type IFertilizer,
 } from '../../models'
 
@@ -25,8 +25,8 @@ export const listPlants = publicProcedure
         plantedAt: -1,
         createdAt: -1,
       })
-      .populate<{ activities: (IActivity & { fertilizer: IFertilizer })[] }>({
-        path: 'activities',
+      .populate<{ chores: (IChore & { fertilizer: IFertilizer })[] }>({
+        path: 'chores',
         populate: {
           path: 'fertilizer',
         },
