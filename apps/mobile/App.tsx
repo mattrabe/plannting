@@ -653,10 +653,14 @@ function PlantsDisplay() {
       return
     }
 
+    // Get timezone offset in minutes (negative for timezones ahead of UTC)
+    const timezoneOffset = new Date().getTimezoneOffset()
+
     createMutation.mutate({
       name: formData.name,
-      plantedAt: new Date(formData.plantedAt),
+      plantedAt: formData.plantedAt, // Send as string, API will convert
       notes: formData.notes || undefined,
+      clientTimezoneOffset: -timezoneOffset, // Negate because getTimezoneOffset returns opposite sign
     })
   }
 
@@ -665,19 +669,27 @@ function PlantsDisplay() {
       return
     }
 
+    // Get timezone offset in minutes (negative for timezones ahead of UTC)
+    const timezoneOffset = new Date().getTimezoneOffset()
+
     updateMutation.mutate({
       id: editingId,
       name: editFormData.name,
-      plantedAt: new Date(editFormData.plantedAt),
+      plantedAt: editFormData.plantedAt, // Send as string, API will convert
       notes: editFormData.notes || undefined,
+      clientTimezoneOffset: -timezoneOffset, // Negate because getTimezoneOffset returns opposite sign
     })
   }
 
   const handleEditClick = (plant: NonNullable<typeof data>['plants'][0]) => {
     setEditingId(plant._id)
+    // Convert UTC date from API to local date string for editing
+    const localDate = plant.plantedAt
+      ? new Date(plant.plantedAt).toLocaleDateString('en-US') // YYYY-MM-DD format
+      : new Date().toLocaleDateString('en-US')
     setEditFormData({
       name: plant.name,
-      plantedAt: plant.plantedAt ? new Date(plant.plantedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      plantedAt: localDate,
       notes: plant.notes || '',
     })
   }
@@ -899,7 +911,7 @@ function PlantsDisplay() {
                 {isExpanded && (
                   <View style={styles.expandedContent}>
                     <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
+                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt ? new Date(plant.plantedAt).toLocaleDateString('en-US') : 'unknown'}
                     </Text>
                     {plant.notes && (
                       <Text style={styles.listItemText}>
@@ -920,7 +932,7 @@ function PlantsDisplay() {
                           {chore.notes}
                         </Text>
                         <Text style={styles.listItemText}>
-                          <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate?.toLocaleString('en-US') || 'unknown'}
+                          <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleString('en-US') : 'unknown'}
                         </Text>
                         <Text style={styles.listItemText}>
                           <Text style={styles.label}>History:</Text> unknown
