@@ -593,6 +593,18 @@ function FertilizersDisplay() {
 
 function PlantsDisplay() {
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
+  const [showForm, setShowForm] = React.useState(false)
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [formData, setFormData] = React.useState({
+    name: '',
+    plantedAt: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
+    notes: '',
+  })
+  const [editFormData, setEditFormData] = React.useState({
+    name: '',
+    plantedAt: '',
+    notes: '',
+  })
 
   const {
     data,
@@ -605,6 +617,90 @@ function PlantsDisplay() {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
+
+  const createMutation = trpc.plants.create.useMutation({
+    onSuccess: () => {
+      refetch()
+      setShowForm(false)
+      setFormData({
+        name: '',
+        plantedAt: new Date().toISOString().split('T')[0],
+        notes: '',
+      })
+    },
+  })
+
+  const updateMutation = trpc.plants.update.useMutation({
+    onSuccess: () => {
+      refetch()
+      setEditingId(null)
+      setEditFormData({
+        name: '',
+        plantedAt: '',
+        notes: '',
+      })
+    },
+  })
+
+  const deleteMutation = trpc.plants.delete.useMutation({
+    onSuccess: () => {
+      refetch()
+    },
+  })
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.plantedAt) {
+      return
+    }
+
+    createMutation.mutate({
+      name: formData.name,
+      plantedAt: new Date(formData.plantedAt),
+      notes: formData.notes || undefined,
+    })
+  }
+
+  const handleEditSubmit = () => {
+    if (!editingId || !editFormData.name || !editFormData.plantedAt) {
+      return
+    }
+
+    updateMutation.mutate({
+      id: editingId,
+      name: editFormData.name,
+      plantedAt: new Date(editFormData.plantedAt),
+      notes: editFormData.notes || undefined,
+    })
+  }
+
+  const handleEditClick = (plant: NonNullable<typeof data>['plants'][0]) => {
+    setEditingId(plant._id)
+    setEditFormData({
+      name: plant.name,
+      plantedAt: plant.plantedAt ? new Date(plant.plantedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      notes: plant.notes || '',
+    })
+  }
+
+  const handleDeleteClick = (plant: NonNullable<typeof data>['plants'][0]) => {
+    Alert.alert(
+      'Delete Plant',
+      `Are you sure you want to delete ${plant.name}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteMutation.mutate({ id: plant._id })
+          },
+        },
+      ]
+    )
+  }
 
   const toggleExpand = (plantId: string) => {
     setExpandedIds(prev => {
@@ -646,59 +742,209 @@ function PlantsDisplay() {
     <View style={[styles.statusContainer, styles.successContainer]}>
       <View style={styles.header}>
         <Text style={styles.title}>Plants</Text>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={() => refetch()}
-          disabled={isRefetching}
-        >
-          <Text style={styles.buttonText}>
-            {isRefetching ? 'Refreshing...' : 'Refresh'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowForm(!showForm)}
+          >
+            <Text style={styles.buttonText}>
+              {showForm ? 'Cancel' : '+ Add'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={() => refetch()}
+            disabled={isRefetching}
+          >
+            <Text style={styles.buttonText}>
+              {isRefetching ? 'Refreshing...' : 'Refresh'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {showForm && (
+        <View style={styles.formContainer}>
+          <Text style={styles.formTitle}>Add New Plant</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Name"
+            value={formData.name}
+            onChangeText={(text) => setFormData({ ...formData, name: text })}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Planted At (YYYY-MM-DD)"
+            value={formData.plantedAt}
+            onChangeText={(text) => setFormData({ ...formData, plantedAt: text })}
+          />
+
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Notes (optional)"
+            value={formData.notes}
+            onChangeText={(text) => setFormData({ ...formData, notes: text })}
+            multiline
+            numberOfLines={3}
+          />
+
+          {createMutation.error && (
+            <Text style={styles.errorText}>
+              Error: {createMutation.error.message}
+            </Text>
+          )}
+
+          <TouchableOpacity
+            style={[styles.submitButton, createMutation.isPending && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={createMutation.isPending}
+          >
+            <Text style={styles.buttonText}>
+              {createMutation.isPending ? 'Saving...' : 'Save'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.cancelButton, createMutation.isPending && styles.submitButtonDisabled]}
+            onPress={() => setShowForm(false)}
+            disabled={createMutation.isPending}
+          >
+            <Text style={styles.buttonText}>
+              Cancel
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {!data?.plants?.length ? (
         <Text style={styles.listItemText}>No plants found.</Text>
       ) : data?.plants?.map((plant, index) => {
         const isExpanded = expandedIds.has(plant._id)
+        const isEditing = editingId === plant._id
 
         return (
           <View key={plant._id} style={styles.listItem}>
-            <TouchableOpacity
-              style={styles.expandableHeader}
-              onPress={() => toggleExpand(plant._id)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
-              <Text style={styles.listItemText}>
-                <Text style={styles.label}>{plant.name}</Text>
-              </Text>
-            </TouchableOpacity>
-            {isExpanded && (
-              <View style={styles.expandedContent}>
-                <Text style={styles.listItemText}>
-                  <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
-                </Text>
+            {isEditing ? (
+              <View style={styles.formContainer}>
+                <Text style={styles.formTitle}>Edit Plant</Text>
 
-                <Text style={styles.listItemText}></Text>
-                <Text style={styles.label}>Chores</Text>
-                {plant.chores.map((chore, index) => (
-                  <View key={chore._id}>
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
-                    </Text>
-                    <Text style={styles.listItemText}>
-                      {chore.notes}
-                    </Text>
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate?.toLocaleString('en-US') || 'unknown'}
-                    </Text>
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>History:</Text> unknown
-                    </Text>
-                  </View>
-                ))}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Name"
+                  value={editFormData.name}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, name: text })}
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Planted At (YYYY-MM-DD)"
+                  value={editFormData.plantedAt}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, plantedAt: text })}
+                />
+
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Notes (optional)"
+                  value={editFormData.notes}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, notes: text })}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                {updateMutation.error && (
+                  <Text style={styles.errorText}>
+                    Error: {updateMutation.error.message}
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.submitButton, updateMutation.isPending && styles.submitButtonDisabled]}
+                  onPress={handleEditSubmit}
+                  disabled={updateMutation.isPending}
+                >
+                  <Text style={styles.buttonText}>
+                    {updateMutation.isPending ? 'Saving...' : 'Save'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelButton, updateMutation.isPending && styles.submitButtonDisabled]}
+                  onPress={() => {
+                    setEditingId(null)
+                    setEditFormData({
+                      name: '',
+                      plantedAt: '',
+                      notes: '',
+                    })
+                  }}
+                  disabled={updateMutation.isPending}
+                >
+                  <Text style={styles.buttonText}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
               </View>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.expandableHeader}
+                  onPress={() => toggleExpand(plant._id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>{plant.name}</Text>
+                  </Text>
+                </TouchableOpacity>
+                {isExpanded && (
+                  <View style={styles.expandedContent}>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
+                    </Text>
+                    {plant.notes && (
+                      <Text style={styles.listItemText}>
+                        <Text style={styles.label}>Notes:</Text> {plant.notes}
+                      </Text>
+                    )}
+
+                    <Text style={styles.listItemText}></Text>
+                    <Text style={styles.label}>Chores</Text>
+                    {!plant.chores.length ? (
+                      <Text style={styles.listItemText}>No chores found.</Text>
+                    ) : plant.chores.map((chore, index) => (
+                      <View key={chore._id}>
+                        <Text style={styles.listItemText}>
+                          <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
+                        </Text>
+                        <Text style={styles.listItemText}>
+                          {chore.notes}
+                        </Text>
+                        <Text style={styles.listItemText}>
+                          <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate?.toLocaleString('en-US') || 'unknown'}
+                        </Text>
+                        <Text style={styles.listItemText}>
+                          <Text style={styles.label}>History:</Text> unknown
+                        </Text>
+                      </View>
+                    ))}
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEditClick(plant)}
+                      >
+                        <Text style={styles.editButtonText}>✏️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteClick(plant)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Text style={styles.deleteButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </>
             )}
           </View>
         )
