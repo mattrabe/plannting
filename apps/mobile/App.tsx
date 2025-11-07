@@ -681,17 +681,17 @@ function PlantsDisplay() {
                 </Text>
 
                 <Text style={styles.listItemText}></Text>
-                <Text style={styles.label}>Activities ({plant.activities.length}):</Text>
-                {plant.activities.map((activity, index) => (
-                  <View key={activity._id}>
+                <Text style={styles.label}>Chores</Text>
+                {plant.chores.map((chore, index) => (
+                  <View key={chore._id}>
                     <Text style={styles.listItemText}>
-                      <Text style={styles.label}>{activity.fertilizer.name}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
+                      <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
                     </Text>
                     <Text style={styles.listItemText}>
-                      {activity.notes}
+                      {chore.notes}
                     </Text>
                     <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toLocaleString('en-US') || 'unknown'}
+                      <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate?.toLocaleString('en-US') || 'unknown'}
                     </Text>
                     <Text style={styles.listItemText}>
                       <Text style={styles.label}>History:</Text> unknown

@@ -4,7 +4,7 @@ export interface IPlant {
   _id: string,
   name: string,
   notes: string | null,
-  activities: mongoose.Types.ObjectId[],
+  chores: mongoose.Types.ObjectId[],
   plantedAt: Date,
   createdAt: Date,
   updatedAt: Date,
@@ -23,9 +23,9 @@ export const plantSchema = new mongoose.Schema<IPlant>({
     type: Date,
     required: true,
   },
-  activities: {
+  chores: {
     type: [mongoose.Schema.Types.ObjectId],
-    ref: 'Activity',
+    ref: 'Chore',
   },
 }, { timestamps: true })
 
