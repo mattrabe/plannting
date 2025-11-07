@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Switch } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Switch, Alert } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { trpc } from './lib/trpc'
@@ -111,7 +111,18 @@ function HealthDisplay() {
 
 function FertilizersDisplay() {
   const [showForm, setShowForm] = React.useState(false)
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
   const [formData, setFormData] = React.useState({
+    name: '',
+    type: 'liquid' as 'liquid' | 'granules',
+    isOrganic: false,
+    notes: '',
+    nitrogen: '',
+    phosphorus: '',
+    potassium: '',
+  })
+  const [editFormData, setEditFormData] = React.useState({
     name: '',
     type: 'liquid' as 'liquid' | 'granules',
     isOrganic: false,
@@ -149,6 +160,28 @@ function FertilizersDisplay() {
     },
   })
 
+  const updateMutation = trpc.fertilizers.update.useMutation({
+    onSuccess: () => {
+      refetch()
+      setEditingId(null)
+      setEditFormData({
+        name: '',
+        type: 'liquid',
+        isOrganic: false,
+        notes: '',
+        nitrogen: '',
+        phosphorus: '',
+        potassium: '',
+      })
+    },
+  })
+
+  const deleteMutation = trpc.fertilizers.delete.useMutation({
+    onSuccess: () => {
+      refetch()
+    },
+  })
+
   const handleSubmit = () => {
     if (!formData.name || !formData.nitrogen || !formData.phosphorus || !formData.potassium) {
       return
@@ -162,6 +195,68 @@ function FertilizersDisplay() {
       nitrogen: parseFloat(formData.nitrogen),
       phosphorus: parseFloat(formData.phosphorus),
       potassium: parseFloat(formData.potassium),
+    })
+  }
+
+  const handleEditSubmit = () => {
+    if (!editingId || !editFormData.name || !editFormData.nitrogen || !editFormData.phosphorus || !editFormData.potassium) {
+      return
+    }
+
+    updateMutation.mutate({
+      id: editingId,
+      name: editFormData.name,
+      type: editFormData.type,
+      isOrganic: editFormData.isOrganic,
+      notes: editFormData.notes || undefined,
+      nitrogen: parseFloat(editFormData.nitrogen),
+      phosphorus: parseFloat(editFormData.phosphorus),
+      potassium: parseFloat(editFormData.potassium),
+    })
+  }
+
+  const handleEditClick = (fertilizer: NonNullable<typeof data>['fertilizers'][0]) => {
+    setEditingId(fertilizer._id)
+    setEditFormData({
+      name: fertilizer.name,
+      type: fertilizer.type,
+      isOrganic: fertilizer.isOrganic,
+      notes: fertilizer.notes || '',
+      nitrogen: fertilizer.nitrogen?.toString() || '',
+      phosphorus: fertilizer.phosphorus?.toString() || '',
+      potassium: fertilizer.potassium?.toString() || '',
+    })
+  }
+
+  const handleDeleteClick = (fertilizer: NonNullable<typeof data>['fertilizers'][0]) => {
+    Alert.alert(
+      'Delete Fertilizer',
+      `Are you sure you want to delete ${fertilizer.name}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteMutation.mutate({ id: fertilizer._id })
+          },
+        },
+      ]
+    )
+  }
+
+  const toggleExpand = (fertilizerId: string) => {
+    setExpandedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(fertilizerId)) {
+        newSet.delete(fertilizerId)
+      } else {
+        newSet.add(fertilizerId)
+      }
+      return newSet
     })
   }
 
@@ -310,7 +405,7 @@ function FertilizersDisplay() {
             disabled={createMutation.isPending}
           >
             <Text style={styles.buttonText}>
-              {createMutation.isPending ? 'Creating...' : 'Create Fertilizer'}
+              {createMutation.isPending ? 'Saving...' : 'Save'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -327,21 +422,186 @@ function FertilizersDisplay() {
 
       {!data?.fertilizers?.length ? (
         <Text style={styles.listItemText}>No fertilizers found.</Text>
-      ) : data?.fertilizers?.map((fertilizer, index) => (
-        <View key={fertilizer._id} style={styles.listItem}>
-          <Text style={styles.listItemText}>
-            <Text style={styles.label}>{fertilizer.name} {fertilizer.nitrogen ?? '?'}-{fertilizer.phosphorus ?? '?'}-{fertilizer.potassium ?? '?'}</Text>, {fertilizer.type}{fertilizer.isOrganic ? ' (Organic)' : ''}
-          </Text>
-          <Text style={styles.listItemText}>
-            <Text style={styles.label}>Notes:</Text> {fertilizer.notes}
-          </Text>
-        </View>
-      ))}
+      ) : data?.fertilizers?.map((fertilizer, index) => {
+        const isExpanded = expandedIds.has(fertilizer._id)
+        const isEditing = editingId === fertilizer._id
+
+        return (
+          <View key={fertilizer._id} style={styles.listItem}>
+            {isEditing ? (
+              <View style={styles.formContainer}>
+                <Text style={styles.formTitle}>Edit Fertilizer</Text>
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Name"
+                  value={editFormData.name}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, name: text })}
+                />
+
+                <View style={styles.typeContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      editFormData.type === 'liquid' && styles.typeButtonActive
+                    ]}
+                    onPress={() => setEditFormData({ ...editFormData, type: 'liquid' })}
+                  >
+                    <Text style={[
+                      styles.typeButtonText,
+                      editFormData.type === 'liquid' && styles.typeButtonTextActive
+                    ]}>
+                      Liquid
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.typeButton,
+                      styles.typeButtonRight,
+                      editFormData.type === 'granules' && styles.typeButtonActive
+                    ]}
+                    onPress={() => setEditFormData({ ...editFormData, type: 'granules' })}
+                  >
+                    <Text style={[
+                      styles.typeButtonText,
+                      editFormData.type === 'granules' && styles.typeButtonTextActive
+                    ]}>
+                      Granules
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.switchContainer}>
+                  <Text style={styles.switchLabel}>Organic</Text>
+                  <Switch
+                    value={editFormData.isOrganic}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, isOrganic: value })}
+                  />
+                </View>
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Nitrogen (N)"
+                  value={editFormData.nitrogen}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, nitrogen: text })}
+                  keyboardType="numeric"
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Phosphorus (P)"
+                  value={editFormData.phosphorus}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, phosphorus: text })}
+                  keyboardType="numeric"
+                />
+
+                <TextInput
+                  style={styles.input}
+                  placeholder="Potassium (K)"
+                  value={editFormData.potassium}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, potassium: text })}
+                  keyboardType="numeric"
+                />
+
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Notes (optional)"
+                  value={editFormData.notes}
+                  onChangeText={(text) => setEditFormData({ ...editFormData, notes: text })}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                {updateMutation.error && (
+                  <Text style={styles.errorText}>
+                    Error: {updateMutation.error.message}
+                  </Text>
+                )}
+
+                <TouchableOpacity
+                  style={[styles.submitButton, updateMutation.isPending && styles.submitButtonDisabled]}
+                  onPress={handleEditSubmit}
+                  disabled={updateMutation.isPending}
+                >
+                  <Text style={styles.buttonText}>
+                    {updateMutation.isPending ? 'Saving...' : 'Save'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.cancelButton, updateMutation.isPending && styles.submitButtonDisabled]}
+                  onPress={() => {
+                    setEditingId(null)
+                    setEditFormData({
+                      name: '',
+                      type: 'liquid',
+                      isOrganic: false,
+                      notes: '',
+                      nitrogen: '',
+                      phosphorus: '',
+                      potassium: '',
+                    })
+                  }}
+                  disabled={updateMutation.isPending}
+                >
+                  <Text style={styles.buttonText}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.expandableHeader}
+                  onPress={() => toggleExpand(fertilizer._id)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>{fertilizer.name}</Text>
+                  </Text>
+                </TouchableOpacity>
+                {isExpanded && (
+                  <View style={styles.expandedContent}>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>NPK:</Text> {fertilizer.nitrogen ?? '?'}-{fertilizer.phosphorus ?? '?'}-{fertilizer.potassium ?? '?'}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      {fertilizer.type}{fertilizer.isOrganic ? ' (Organic)' : ''}
+                    </Text>
+                    {fertilizer.notes && (
+                      <Text style={styles.listItemText}>
+                        <Text style={styles.label}>Notes:</Text> {fertilizer.notes}
+                      </Text>
+                    )}
+                    <View style={styles.actionButtons}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEditClick(fertilizer)}
+                      >
+                        <Text style={styles.editButtonText}>✏️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteClick(fertilizer)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Text style={styles.deleteButtonText}>✕</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </>
+            )}
+          </View>
+        )
+      })}
     </View>
   );
 }
 
 function PlantsDisplay() {
+  const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
+
   const {
     data,
     isLoading,
@@ -353,6 +613,18 @@ function PlantsDisplay() {
     refetchInterval: 30000, // Refetch every 30 seconds
     retry: 1,
   });
+
+  const toggleExpand = (plantId: string) => {
+    setExpandedIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(plantId)) {
+        newSet.delete(plantId)
+      } else {
+        newSet.add(plantId)
+      }
+      return newSet
+    })
+  }
 
   if (isLoading) {
     return (
@@ -395,35 +667,50 @@ function PlantsDisplay() {
 
       {!data?.plants?.length ? (
         <Text style={styles.listItemText}>No plants found.</Text>
-      ) : data?.plants?.map((plant, index) => (
-        <View key={plant._id} style={styles.listItem}>
-          <Text style={styles.listItemText}>
-            <Text style={styles.label}>Name:</Text> {plant.name}
-          </Text>
-          <Text style={styles.listItemText}>
-            <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
-          </Text>
+      ) : data?.plants?.map((plant, index) => {
+        const isExpanded = expandedIds.has(plant._id)
 
-          <Text style={styles.listItemText}></Text>
-          <Text style={styles.label}>Activities ({plant.activities.length}):</Text>
-          {plant.activities.map((activity, index) => (
-            <View key={activity._id}>
+        return (
+          <View key={plant._id} style={styles.listItem}>
+            <TouchableOpacity
+              style={styles.expandableHeader}
+              onPress={() => toggleExpand(plant._id)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
               <Text style={styles.listItemText}>
-                <Text style={styles.label}>{activity.fertilizer.name}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
+                <Text style={styles.label}>{plant.name}</Text>
               </Text>
-              <Text style={styles.listItemText}>
-                {activity.notes}
-              </Text>
-              <Text style={styles.listItemText}>
-                <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toLocaleString('en-US') || 'unknown'}
-              </Text>
-              <Text style={styles.listItemText}>
-                <Text style={styles.label}>History:</Text> unknown
-              </Text>
-            </View>
-          ))}
-        </View>
-      ))}
+            </TouchableOpacity>
+            {isExpanded && (
+              <View style={styles.expandedContent}>
+                <Text style={styles.listItemText}>
+                  <Text style={styles.label}>Planted At:</Text> {plant.plantedAt?.toLocaleDateString('en-US') || 'unknown'}
+                </Text>
+
+                <Text style={styles.listItemText}></Text>
+                <Text style={styles.label}>Activities ({plant.activities.length}):</Text>
+                {plant.activities.map((activity, index) => (
+                  <View key={activity._id}>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>{activity.fertilizer.name}:</Text> {activity.fertilizerAmount} every {activity.recurAmount} {activity.recurUnit}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      {activity.notes}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>Next Date:</Text> {activity.recurNextDate?.toLocaleString('en-US') || 'unknown'}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>History:</Text> unknown
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )
+      })}
     </View>
   );
 }
@@ -483,6 +770,45 @@ const styles = StyleSheet.create({
     borderTopColor: '#ccc',
     paddingTop: 8,
     marginTop: 8,
+  },
+  expandableHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  arrowIcon: {
+    fontSize: 12,
+    color: '#155724',
+    marginRight: 8,
+    width: 16,
+  },
+  expandedContent: {
+    marginTop: 8,
+    paddingLeft: 24,
+  },
+  listItemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  editButton: {
+    padding: 4,
+  },
+  editButtonText: {
+    fontSize: 16,
+  },
+  deleteButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: '#dc3545',
+    fontWeight: 'bold',
   },
   listItemText: {
     fontSize: 14,
