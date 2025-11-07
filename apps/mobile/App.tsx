@@ -26,19 +26,11 @@ export default function App() {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.appTitle}>Plannting</Text>
 
-            <HealthDisplay />
-
             <FertilizersDisplay />
 
             <PlantsDisplay />
 
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoTitle}>About</Text>
-              <Text style={styles.infoText}>
-                This mobile app connects to the API
-                to monitor MongoDB connection status in real-time using tRPC.
-              </Text>
-            </View>
+            <HealthDisplay />
           </ScrollView>
         </View>
       </QueryClientProvider>
@@ -84,7 +76,7 @@ function HealthDisplay() {
   }
 
   return (
-    <View style={[styles.statusContainer, styles.successContainer]}>
+    <View style={[styles.infoContainer]}>
       <View style={styles.header}>
         <Text style={styles.title}>API Health</Text>
         <TouchableOpacity
@@ -946,16 +938,5 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     marginTop: 20,
-  },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 10,
-    color: '#333',
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#666',
   },
 });
