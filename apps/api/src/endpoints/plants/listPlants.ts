@@ -20,6 +20,11 @@ export const listPlants = publicProcedure
 
     const plants = await Plant
       .find(query)
+      .sort({
+        name: 1,
+        plantedAt: -1,
+        createdAt: -1,
+      })
       .populate<{ activities: (IActivity & { fertilizer: IFertilizer })[] }>({
         path: 'activities',
         populate: {

@@ -1,3 +1,5 @@
+import { TRPCError } from '@trpc/server'
+
 import { mongo } from '../db'
 
 import { publicProcedure } from '../procedures/publicProcedure'
@@ -8,7 +10,10 @@ export const health = publicProcedure.query(async () => {
     .command({ ping: 1 })
     .then(res => {
       if (!res.ok) {
-        throw new Error('Unable to ping database.')
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Unable to ping database.',
+        })
       }
 
       return {
