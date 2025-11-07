@@ -2,6 +2,7 @@ import { router } from '../trpc'
 
 import { health } from '../endpoints/health'
 
+import { choresRouter } from './chores'
 import { fertilizersRouter } from './fertilizers'
 import { plantsRouter } from './plants'
 
@@ -9,6 +10,7 @@ import { plantsRouter } from './plants'
 export const trpcRouter = router({
   health,
 
+  chores: choresRouter,
   fertilizers: fertilizersRouter,
   plants: plantsRouter,
 })
