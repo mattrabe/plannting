@@ -554,17 +554,6 @@ function FertilizersDisplay() {
                 </TouchableOpacity>
                 {isExpanded && (
                   <View style={styles.expandedContent}>
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>NPK:</Text> {fertilizer.nitrogen ?? '?'}-{fertilizer.phosphorus ?? '?'}-{fertilizer.potassium ?? '?'}
-                    </Text>
-                    <Text style={styles.listItemText}>
-                      {fertilizer.type}{fertilizer.isOrganic ? ' (Organic)' : ''}
-                    </Text>
-                    {fertilizer.notes && (
-                      <Text style={styles.listItemText}>
-                        <Text style={styles.label}>Notes:</Text> {fertilizer.notes}
-                      </Text>
-                    )}
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
                         style={styles.editButton}
@@ -580,6 +569,18 @@ function FertilizersDisplay() {
                         <Text style={styles.deleteButtonText}>✕</Text>
                       </TouchableOpacity>
                     </View>
+
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>NPK:</Text> {fertilizer.nitrogen ?? '?'}-{fertilizer.phosphorus ?? '?'}-{fertilizer.potassium ?? '?'}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      {fertilizer.type}{fertilizer.isOrganic ? ' (Organic)' : ''}
+                    </Text>
+                    {fertilizer.notes && (
+                      <Text style={styles.listItemText}>
+                        <Text style={styles.label}>Notes:</Text> {fertilizer.notes}
+                      </Text>
+                    )}
                   </View>
                 )}
               </>
@@ -595,6 +596,24 @@ function PlantsDisplay() {
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
   const [showForm, setShowForm] = React.useState(false)
   const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [showChoreForm, setShowChoreForm] = React.useState<string | null>(null) // plantId
+  const [editingChoreId, setEditingChoreId] = React.useState<string | null>(null)
+  const [choreFormData, setChoreFormData] = React.useState({
+    fertilizer: '',
+    fertilizerAmount: '',
+    recurAmount: '',
+    recurUnit: '',
+    recurNextDate: '',
+    notes: '',
+  })
+  const [editChoreFormData, setEditChoreFormData] = React.useState({
+    fertilizer: '',
+    fertilizerAmount: '',
+    recurAmount: '',
+    recurUnit: '',
+    recurNextDate: '',
+    notes: '',
+  })
   const [formData, setFormData] = React.useState({
     name: '',
     plantedAt: new Date().toISOString().split('T')[0], // Format: YYYY-MM-DD
@@ -615,6 +634,11 @@ function PlantsDisplay() {
     isRefetching
   } = trpc.plants.list.useQuery({ q: ''}, {
     refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1,
+  });
+
+  // Fetch fertilizers for chore form
+  const { data: fertilizersData } = trpc.fertilizers.list.useQuery({ q: ''}, {
     retry: 1,
   });
 
@@ -643,6 +667,42 @@ function PlantsDisplay() {
   })
 
   const deleteMutation = trpc.plants.delete.useMutation({
+    onSuccess: () => {
+      refetch()
+    },
+  })
+
+  const createChoreMutation = trpc.chores.create.useMutation({
+    onSuccess: () => {
+      refetch()
+      setShowChoreForm(null)
+      setChoreFormData({
+        fertilizer: '',
+        fertilizerAmount: '',
+        recurAmount: '',
+        recurUnit: '',
+        recurNextDate: '',
+        notes: '',
+      })
+    },
+  })
+
+  const updateChoreMutation = trpc.chores.update.useMutation({
+    onSuccess: () => {
+      refetch()
+      setEditingChoreId(null)
+      setEditChoreFormData({
+        fertilizer: '',
+        fertilizerAmount: '',
+        recurAmount: '',
+        recurUnit: '',
+        recurNextDate: '',
+        notes: '',
+      })
+    },
+  })
+
+  const deleteChoreMutation = trpc.chores.delete.useMutation({
     onSuccess: () => {
       refetch()
     },
@@ -724,6 +784,76 @@ function PlantsDisplay() {
       }
       return newSet
     })
+  }
+
+  const handleChoreSubmit = (plantId: string) => {
+    if (!choreFormData.fertilizer) {
+      return
+    }
+
+    const timezoneOffset = new Date().getTimezoneOffset()
+
+    createChoreMutation.mutate({
+      plantId,
+      fertilizer: choreFormData.fertilizer,
+      fertilizerAmount: choreFormData.fertilizerAmount || undefined,
+      recurAmount: choreFormData.recurAmount ? parseFloat(choreFormData.recurAmount) : undefined,
+      recurUnit: choreFormData.recurUnit || undefined,
+      recurNextDate: choreFormData.recurNextDate || undefined,
+      notes: choreFormData.notes || undefined,
+      clientTimezoneOffset: -timezoneOffset,
+    })
+  }
+
+  const handleChoreEditSubmit = () => {
+    if (!editingChoreId) {
+      return
+    }
+
+    const timezoneOffset = new Date().getTimezoneOffset()
+
+    updateChoreMutation.mutate({
+      id: editingChoreId,
+      fertilizer: editChoreFormData.fertilizer || undefined,
+      fertilizerAmount: editChoreFormData.fertilizerAmount || undefined,
+      recurAmount: editChoreFormData.recurAmount ? parseFloat(editChoreFormData.recurAmount) : undefined,
+      recurUnit: editChoreFormData.recurUnit || undefined,
+      recurNextDate: editChoreFormData.recurNextDate || undefined,
+      notes: editChoreFormData.notes || undefined,
+      clientTimezoneOffset: -timezoneOffset,
+    })
+  }
+
+  const handleChoreEditClick = (chore: NonNullable<typeof data>['plants'][0]['chores'][0]) => {
+    setEditingChoreId(chore._id)
+    setEditChoreFormData({
+      fertilizer: chore.fertilizer._id,
+      fertilizerAmount: chore.fertilizerAmount || '',
+      recurAmount: chore.recurAmount?.toString() || '',
+      recurUnit: chore.recurUnit || '',
+      recurNextDate: chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-CA') : '',
+      notes: chore.notes || '',
+    })
+  }
+
+  const handleChoreDeleteClick = (chore: NonNullable<typeof data>['plants'][0]['chores'][0], plantId: string) => {
+    Alert.alert(
+      'Delete Chore',
+      `Are you sure you want to delete this chore?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteChoreMutation.mutate({ id: chore._id, plantId })
+          },
+        },
+      ]
+    )
   }
 
   if (isLoading) {
@@ -910,35 +1040,6 @@ function PlantsDisplay() {
                 </TouchableOpacity>
                 {isExpanded && (
                   <View style={styles.expandedContent}>
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt ? new Date(plant.plantedAt).toLocaleDateString('en-US') : 'unknown'}
-                    </Text>
-                    {plant.notes && (
-                      <Text style={styles.listItemText}>
-                        <Text style={styles.label}>Notes:</Text> {plant.notes}
-                      </Text>
-                    )}
-
-                    <Text style={styles.listItemText}></Text>
-                    <Text style={styles.label}>Chores</Text>
-                    {!plant.chores.length ? (
-                      <Text style={styles.listItemText}>No chores found.</Text>
-                    ) : plant.chores.map((chore, index) => (
-                      <View key={chore._id}>
-                        <Text style={styles.listItemText}>
-                          <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
-                        </Text>
-                        <Text style={styles.listItemText}>
-                          {chore.notes}
-                        </Text>
-                        <Text style={styles.listItemText}>
-                          <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleString('en-US') : 'unknown'}
-                        </Text>
-                        <Text style={styles.listItemText}>
-                          <Text style={styles.label}>History:</Text> unknown
-                        </Text>
-                      </View>
-                    ))}
                     <View style={styles.actionButtons}>
                       <TouchableOpacity
                         style={styles.editButton}
@@ -954,6 +1055,268 @@ function PlantsDisplay() {
                         <Text style={styles.deleteButtonText}>✕</Text>
                       </TouchableOpacity>
                     </View>
+
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt ? new Date(plant.plantedAt).toLocaleDateString('en-US') : 'unknown'}
+                    </Text>
+                    {plant.notes && (
+                      <Text style={styles.listItemText}>
+                        <Text style={styles.label}>Notes:</Text> {plant.notes}
+                      </Text>
+                    )}
+
+                    <Text style={styles.listItemText}></Text>
+                    <View style={styles.choresHeader}>
+                      <Text style={styles.label}>Chores</Text>
+                      <TouchableOpacity
+                        style={styles.addChoreButton}
+                        onPress={() => setShowChoreForm(plant._id)}
+                      >
+                        <Text style={styles.buttonText}>+ Add</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {showChoreForm === plant._id && (
+                      <View style={styles.formContainer}>
+                        <Text style={styles.formTitle}>Add New Chore</Text>
+
+                        <Text style={styles.inputLabel}>Fertilizer *</Text>
+                        <ScrollView style={styles.pickerContainer}>
+                          {fertilizersData?.fertilizers.map((fertilizer) => (
+                            <TouchableOpacity
+                              key={fertilizer._id}
+                              style={[
+                                styles.pickerOption,
+                                choreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                              ]}
+                              onPress={() => setChoreFormData({ ...choreFormData, fertilizer: fertilizer._id })}
+                            >
+                              <Text style={[
+                                styles.pickerOptionText,
+                                choreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                              ]}>
+                                {fertilizer.name}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Fertilizer Amount"
+                          value={choreFormData.fertilizerAmount}
+                          onChangeText={(text) => setChoreFormData({ ...choreFormData, fertilizerAmount: text })}
+                        />
+
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Recur Amount (number)"
+                          value={choreFormData.recurAmount}
+                          onChangeText={(text) => setChoreFormData({ ...choreFormData, recurAmount: text })}
+                          keyboardType="numeric"
+                        />
+
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Recur Unit (e.g., days, weeks)"
+                          value={choreFormData.recurUnit}
+                          onChangeText={(text) => setChoreFormData({ ...choreFormData, recurUnit: text })}
+                        />
+
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Next Date (YYYY-MM-DD)"
+                          value={choreFormData.recurNextDate}
+                          onChangeText={(text) => setChoreFormData({ ...choreFormData, recurNextDate: text })}
+                        />
+
+                        <TextInput
+                          style={[styles.input, styles.textArea]}
+                          placeholder="Notes (optional)"
+                          value={choreFormData.notes}
+                          onChangeText={(text) => setChoreFormData({ ...choreFormData, notes: text })}
+                          multiline
+                          numberOfLines={3}
+                        />
+
+                        {createChoreMutation.error && (
+                          <Text style={styles.errorText}>
+                            Error: {createChoreMutation.error.message}
+                          </Text>
+                        )}
+
+                        <TouchableOpacity
+                          style={[styles.submitButton, createChoreMutation.isPending && styles.submitButtonDisabled]}
+                          onPress={() => handleChoreSubmit(plant._id)}
+                          disabled={createChoreMutation.isPending}
+                        >
+                          <Text style={styles.buttonText}>
+                            {createChoreMutation.isPending ? 'Saving...' : 'Save'}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.cancelButton, createChoreMutation.isPending && styles.submitButtonDisabled]}
+                          onPress={() => {
+                            setShowChoreForm(null)
+                            setChoreFormData({
+                              fertilizer: '',
+                              fertilizerAmount: '',
+                              recurAmount: '',
+                              recurUnit: '',
+                              recurNextDate: '',
+                              notes: '',
+                            })
+                          }}
+                          disabled={createChoreMutation.isPending}
+                        >
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+
+                    {!plant.chores.length ? (
+                      <Text style={styles.listItemText}>No chores found.</Text>
+                    ) : plant.chores.map((chore, index) => {
+                      const isEditingChore = editingChoreId === chore._id
+
+                      return (
+                        <View key={chore._id} style={styles.choreItem}>
+                          {isEditingChore ? (
+                            <View style={styles.formContainer}>
+                              <Text style={styles.formTitle}>Edit Chore</Text>
+
+                              <Text style={styles.inputLabel}>Fertilizer</Text>
+                              <ScrollView style={styles.pickerContainer}>
+                                {fertilizersData?.fertilizers.map((fertilizer) => (
+                                  <TouchableOpacity
+                                    key={fertilizer._id}
+                                    style={[
+                                      styles.pickerOption,
+                                      editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                                    ]}
+                                    onPress={() => setEditChoreFormData({ ...editChoreFormData, fertilizer: fertilizer._id })}
+                                  >
+                                    <Text style={[
+                                      styles.pickerOptionText,
+                                      editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                                    ]}>
+                                      {fertilizer.name}
+                                    </Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
+
+                              <TextInput
+                                style={styles.input}
+                                placeholder="Fertilizer Amount"
+                                value={editChoreFormData.fertilizerAmount}
+                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, fertilizerAmount: text })}
+                              />
+
+                              <TextInput
+                                style={styles.input}
+                                placeholder="Recur Amount (number)"
+                                value={editChoreFormData.recurAmount}
+                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurAmount: text })}
+                                keyboardType="numeric"
+                              />
+
+                              <TextInput
+                                style={styles.input}
+                                placeholder="Recur Unit (e.g., days, weeks)"
+                                value={editChoreFormData.recurUnit}
+                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurUnit: text })}
+                              />
+
+                              <TextInput
+                                style={styles.input}
+                                placeholder="Next Date (YYYY-MM-DD)"
+                                value={editChoreFormData.recurNextDate}
+                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurNextDate: text })}
+                              />
+
+                              <TextInput
+                                style={[styles.input, styles.textArea]}
+                                placeholder="Notes (optional)"
+                                value={editChoreFormData.notes}
+                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, notes: text })}
+                                multiline
+                                numberOfLines={3}
+                              />
+
+                              {updateChoreMutation.error && (
+                                <Text style={styles.errorText}>
+                                  Error: {updateChoreMutation.error.message}
+                                </Text>
+                              )}
+
+                              <TouchableOpacity
+                                style={[styles.submitButton, updateChoreMutation.isPending && styles.submitButtonDisabled]}
+                                onPress={handleChoreEditSubmit}
+                                disabled={updateChoreMutation.isPending}
+                              >
+                                <Text style={styles.buttonText}>
+                                  {updateChoreMutation.isPending ? 'Saving...' : 'Save'}
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity
+                                style={[styles.cancelButton, updateChoreMutation.isPending && styles.submitButtonDisabled]}
+                                onPress={() => {
+                                  setEditingChoreId(null)
+                                  setEditChoreFormData({
+                                    fertilizer: '',
+                                    fertilizerAmount: '',
+                                    recurAmount: '',
+                                    recurUnit: '',
+                                    recurNextDate: '',
+                                    notes: '',
+                                  })
+                                }}
+                                disabled={updateChoreMutation.isPending}
+                              >
+                                <Text style={styles.buttonText}>Cancel</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <>
+                              <View style={styles.choreHeader}>
+                                <Text style={styles.listItemText}>
+                                  <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
+                                </Text>
+                              </View>
+
+                              <View style={styles.actionButtons}>
+                                <TouchableOpacity
+                                  style={styles.editButton}
+                                  onPress={() => handleChoreEditClick(chore)}
+                                >
+                                  <Text style={styles.editButtonText}>✏️</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={styles.deleteButton}
+                                  onPress={() => handleChoreDeleteClick(chore, plant._id)}
+                                  disabled={deleteChoreMutation.isPending}
+                                >
+                                  <Text style={styles.deleteButtonText}>✕</Text>
+                                </TouchableOpacity>
+                              </View>
+
+                              {chore.notes && (
+                                <Text style={styles.listItemText}>
+                                  {chore.notes}
+                                </Text>
+                              )}
+                              <Text style={styles.listItemText}>
+                                <Text style={styles.label}>Next Date:</Text> {chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleString('en-US') : 'unknown'}
+                              </Text>
+                              <Text style={styles.listItemText}>
+                                <Text style={styles.label}>History:</Text> unknown
+                              </Text>
+                            </>
+                          )}
+                        </View>
+                      )
+                    })}
                   </View>
                 )}
               </>
@@ -1043,7 +1406,7 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 8,
   },
   editButton: {
     padding: 4,
@@ -1196,5 +1559,60 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     marginTop: 20,
+  },
+  choresHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  addChoreButton: {
+    backgroundColor: '#007bff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  choreItem: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  choreHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#155724',
+    marginBottom: 8,
+  },
+  pickerContainer: {
+    maxHeight: 150,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    marginBottom: 12,
+    backgroundColor: 'white',
+  },
+  pickerOption: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  pickerOptionSelected: {
+    backgroundColor: '#007bff',
+  },
+  pickerOptionText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  pickerOptionTextSelected: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
