@@ -21,7 +21,7 @@ export const listFertilizers = publicProcedure
         createdAt: -1,
       })
 
-    const payload = { fertilizers: fertilizers.map(plant => plant.toObject()) }
+    const payload = { fertilizers: fertilizers.map(plant => plant.toJSON()) }
 
     return payload
   })

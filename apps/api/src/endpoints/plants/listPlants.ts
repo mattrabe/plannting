@@ -3,10 +3,13 @@ import { z } from 'zod'
 import {
   Plant,
   type IChore,
+  type IChoreLog,
   type IFertilizer,
 } from '../../models'
 
 import { publicProcedure } from '../../procedures/publicProcedure'
+
+import * as choresService from '../../services/chores'
 
 export const listPlants = publicProcedure
   .input(z.object({
@@ -25,15 +28,24 @@ export const listPlants = publicProcedure
         plantedAt: -1,
         createdAt: -1,
       })
-      .populate<{ chores: (IChore & { fertilizer: IFertilizer })[] }>({
+      .populate<{ chores: (Omit<IChore, 'logs'> & { fertilizer: IFertilizer, logs: IChoreLog[] })[] }>({
         path: 'chores',
-        populate: {
-          path: 'fertilizer',
-        },
+        populate: [
+          { path: 'fertilizer' },
+          { path: 'logs' },
+        ],
         select: '-plant',
       })
 
-    const payload = { plants: plants.map(plant => plant.toObject()) }
+    const payload = {
+      plants: plants.map(plant => ({
+        ...plant.toJSON(),
+        chores: plant.toObject().chores.map(chore => ({
+          ...chore,
+          nextDate: choresService.calculateNextDate(chore),
+        })),
+      })),
+    }
 
     return payload
   })

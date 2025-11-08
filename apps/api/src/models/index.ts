@@ -1,4 +1,5 @@
 export * from './Chore'
+export * from './ChoreLog'
 export * from './Fertilizer'
 export * from './Plant'
 export * from './User'

@@ -26,6 +26,8 @@ export default function App() {
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <Text style={styles.appTitle}>Plannting</Text>
 
+            <ToDoDisplay />
+
             <ChoresDisplay />
 
             <PlantsDisplay />
@@ -608,7 +610,6 @@ function PlantsDisplay() {
     fertilizerAmount: '',
     recurAmount: '',
     recurUnit: '',
-    recurNextDate: '',
     notes: '',
   })
   const [editChoreFormData, setEditChoreFormData] = React.useState({
@@ -616,7 +617,6 @@ function PlantsDisplay() {
     fertilizerAmount: '',
     recurAmount: '',
     recurUnit: '',
-    recurNextDate: '',
     notes: '',
   })
   const [formData, setFormData] = React.useState({
@@ -686,7 +686,6 @@ function PlantsDisplay() {
         fertilizerAmount: '',
         recurAmount: '',
         recurUnit: '',
-        recurNextDate: '',
         notes: '',
       })
     },
@@ -701,7 +700,6 @@ function PlantsDisplay() {
         fertilizerAmount: '',
         recurAmount: '',
         recurUnit: '',
-        recurNextDate: '',
         notes: '',
       })
     },
@@ -804,7 +802,6 @@ function PlantsDisplay() {
       fertilizerAmount: choreFormData.fertilizerAmount || undefined,
       recurAmount: choreFormData.recurAmount ? parseFloat(choreFormData.recurAmount) : undefined,
       recurUnit: choreFormData.recurUnit || undefined,
-      recurNextDate: choreFormData.recurNextDate || undefined,
       notes: choreFormData.notes || undefined,
       clientTimezoneOffset: -timezoneOffset,
     })
@@ -823,7 +820,6 @@ function PlantsDisplay() {
       fertilizerAmount: editChoreFormData.fertilizerAmount || undefined,
       recurAmount: editChoreFormData.recurAmount ? parseFloat(editChoreFormData.recurAmount) : undefined,
       recurUnit: editChoreFormData.recurUnit || undefined,
-      recurNextDate: editChoreFormData.recurNextDate || undefined,
       notes: editChoreFormData.notes || undefined,
       clientTimezoneOffset: -timezoneOffset,
     })
@@ -836,7 +832,6 @@ function PlantsDisplay() {
       fertilizerAmount: chore.fertilizerAmount || '',
       recurAmount: chore.recurAmount?.toString() || '',
       recurUnit: chore.recurUnit || '',
-      recurNextDate: chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-CA') : '',
       notes: chore.notes || '',
     })
   }
@@ -1106,6 +1101,7 @@ function PlantsDisplay() {
                           ))}
                         </ScrollView>
 
+                        <Text style={styles.inputLabel}>Fertilizer Amount</Text>
                         <TextInput
                           style={styles.input}
                           placeholder="Fertilizer Amount"
@@ -1113,6 +1109,7 @@ function PlantsDisplay() {
                           onChangeText={(text) => setChoreFormData({ ...choreFormData, fertilizerAmount: text })}
                         />
 
+                        <Text style={styles.inputLabel}>Every</Text>
                         <TextInput
                           style={styles.input}
                           placeholder="Recur Amount (number)"
@@ -1120,20 +1117,25 @@ function PlantsDisplay() {
                           onChangeText={(text) => setChoreFormData({ ...choreFormData, recurAmount: text })}
                           keyboardType="numeric"
                         />
-
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Recur Unit (e.g., days, weeks)"
-                          value={choreFormData.recurUnit}
-                          onChangeText={(text) => setChoreFormData({ ...choreFormData, recurUnit: text })}
-                        />
-
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Next Date (YYYY-MM-DD)"
-                          value={choreFormData.recurNextDate}
-                          onChangeText={(text) => setChoreFormData({ ...choreFormData, recurNextDate: text })}
-                        />
+                        <ScrollView style={styles.pickerContainer}>
+                          {[ 'day', 'week' ].map((unit) => (
+                            <TouchableOpacity
+                              key={unit}
+                              style={[
+                                styles.pickerOption,
+                                choreFormData.recurUnit === unit && styles.pickerOptionSelected
+                              ]}
+                              onPress={() => setChoreFormData({ ...choreFormData, recurUnit: unit })}
+                            >
+                              <Text style={[
+                                styles.pickerOptionText,
+                                choreFormData.recurUnit === unit && styles.pickerOptionTextSelected
+                              ]}>
+                                {unit}{choreFormData.recurAmount === '1' ? '' : 's'}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
 
                         <TextInput
                           style={[styles.input, styles.textArea]}
@@ -1168,7 +1170,6 @@ function PlantsDisplay() {
                               fertilizerAmount: '',
                               recurAmount: '',
                               recurUnit: '',
-                              recurNextDate: '',
                               notes: '',
                             })
                           }}
@@ -1218,6 +1219,7 @@ function PlantsDisplay() {
                                 onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, fertilizerAmount: text })}
                               />
 
+                              <Text style={styles.inputLabel}>Every</Text>
                               <TextInput
                                 style={styles.input}
                                 placeholder="Recur Amount (number)"
@@ -1225,20 +1227,25 @@ function PlantsDisplay() {
                                 onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurAmount: text })}
                                 keyboardType="numeric"
                               />
-
-                              <TextInput
-                                style={styles.input}
-                                placeholder="Recur Unit (e.g., days, weeks)"
-                                value={editChoreFormData.recurUnit}
-                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurUnit: text })}
-                              />
-
-                              <TextInput
-                                style={styles.input}
-                                placeholder="Next Date (YYYY-MM-DD)"
-                                value={editChoreFormData.recurNextDate}
-                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, recurNextDate: text })}
-                              />
+                              <ScrollView style={styles.pickerContainer}>
+                                {[ 'day', 'week' ].map((unit) => (
+                                  <TouchableOpacity
+                                    key={unit}
+                                    style={[
+                                      styles.pickerOption,
+                                      editChoreFormData.recurUnit === unit && styles.pickerOptionSelected
+                                    ]}
+                                    onPress={() => setEditChoreFormData({ ...editChoreFormData, recurUnit: unit })}
+                                  >
+                                    <Text style={[
+                                      styles.pickerOptionText,
+                                      editChoreFormData.recurUnit === unit && styles.pickerOptionTextSelected
+                                    ]}>
+                                      {unit}{editChoreFormData.recurAmount === '1' ? '' : 's'}
+                                    </Text>
+                                  </TouchableOpacity>
+                                ))}
+                              </ScrollView>
 
                               <TextInput
                                 style={[styles.input, styles.textArea]}
@@ -1273,7 +1280,6 @@ function PlantsDisplay() {
                                     fertilizerAmount: '',
                                     recurAmount: '',
                                     recurUnit: '',
-                                    recurNextDate: '',
                                     notes: '',
                                   })
                                 }}
@@ -1286,7 +1292,7 @@ function PlantsDisplay() {
                             <>
                               <View style={styles.choreHeader}>
                                 <Text style={styles.listItemText}>
-                                  <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}
+                                  <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}{chore.recurAmount === 1 ? '' : 's'}
                                 </Text>
                               </View>
 
@@ -1312,11 +1318,16 @@ function PlantsDisplay() {
                                 </Text>
                               )}
                               <Text style={styles.listItemText}>
-                                <Text style={styles.label}>Next Date:</Text> <Text style={chore.recurNextDate && new Date(chore.recurNextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-US') : 'unknown'}</Text>
+                                <Text style={styles.label}>Next Date:</Text> <Text style={chore.nextDate && new Date(chore.nextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : 'unknown'}</Text>
                               </Text>
                               <Text style={styles.listItemText}>
-                                <Text style={styles.label}>History:</Text> unknown
+                                <Text style={styles.label}>History:</Text>
                               </Text>
+                              {chore.logs.map((log) => (
+                                <Text key={log._id} style={styles.listItemText}>
+                                  {log.doneAt ? new Date(log.doneAt).toLocaleDateString('en-US') : 'unknown'}
+                                </Text>
+                              ))}
                             </>
                           )}
                         </View>
@@ -1343,7 +1354,6 @@ function ChoresDisplay() {
     fertilizerAmount: '',
     recurAmount: '',
     recurUnit: '',
-    recurNextDate: '',
     notes: '',
   })
   const [editFormData, setEditFormData] = React.useState({
@@ -1351,7 +1361,6 @@ function ChoresDisplay() {
     fertilizerAmount: '',
     recurAmount: '',
     recurUnit: '',
-    recurNextDate: '',
     notes: '',
   })
 
@@ -1385,7 +1394,6 @@ function ChoresDisplay() {
         fertilizerAmount: '',
         recurAmount: '',
         recurUnit: '',
-        recurNextDate: '',
         notes: '',
       })
     },
@@ -1400,7 +1408,6 @@ function ChoresDisplay() {
         fertilizerAmount: '',
         recurAmount: '',
         recurUnit: '',
-        recurNextDate: '',
         notes: '',
       })
     },
@@ -1425,7 +1432,6 @@ function ChoresDisplay() {
       fertilizerAmount: formData.fertilizerAmount || undefined,
       recurAmount: formData.recurAmount ? parseFloat(formData.recurAmount) : undefined,
       recurUnit: formData.recurUnit || undefined,
-      recurNextDate: formData.recurNextDate || undefined,
       notes: formData.notes || undefined,
       clientTimezoneOffset: -timezoneOffset,
     })
@@ -1444,7 +1450,6 @@ function ChoresDisplay() {
       fertilizerAmount: editFormData.fertilizerAmount || undefined,
       recurAmount: editFormData.recurAmount ? parseFloat(editFormData.recurAmount) : undefined,
       recurUnit: editFormData.recurUnit || undefined,
-      recurNextDate: editFormData.recurNextDate || undefined,
       notes: editFormData.notes || undefined,
       clientTimezoneOffset: -timezoneOffset,
     })
@@ -1457,7 +1462,6 @@ function ChoresDisplay() {
       fertilizerAmount: chore.fertilizerAmount || '',
       recurAmount: chore.recurAmount?.toString() || '',
       recurUnit: chore.recurUnit || '',
-      recurNextDate: chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-CA') : '',
       notes: chore.notes || '',
     })
   }
@@ -1602,6 +1606,7 @@ function ChoresDisplay() {
             onChangeText={(text) => setFormData({ ...formData, fertilizerAmount: text })}
           />
 
+          <Text style={styles.inputLabel}>Every</Text>
           <TextInput
             style={styles.input}
             placeholder="Recur Amount (number)"
@@ -1609,20 +1614,25 @@ function ChoresDisplay() {
             onChangeText={(text) => setFormData({ ...formData, recurAmount: text })}
             keyboardType="numeric"
           />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Recur Unit (e.g., days, weeks)"
-            value={formData.recurUnit}
-            onChangeText={(text) => setFormData({ ...formData, recurUnit: text })}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Next Date (YYYY-MM-DD)"
-            value={formData.recurNextDate}
-            onChangeText={(text) => setFormData({ ...formData, recurNextDate: text })}
-          />
+          <ScrollView style={styles.pickerContainer}>
+            {[ 'day', 'week' ].map((unit) => (
+              <TouchableOpacity
+                key={unit}
+                style={[
+                  styles.pickerOption,
+                  formData.recurUnit === unit && styles.pickerOptionSelected
+                ]}
+                onPress={() => setFormData({ ...formData, recurUnit: unit })}
+              >
+                <Text style={[
+                  styles.pickerOptionText,
+                  formData.recurUnit === unit && styles.pickerOptionTextSelected
+                ]}>
+                  {unit}{formData.recurAmount === '1' ? '' : 's'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -1658,7 +1668,6 @@ function ChoresDisplay() {
                 fertilizerAmount: '',
                 recurAmount: '',
                 recurUnit: '',
-                recurNextDate: '',
                 notes: '',
               })
             }}
@@ -1709,6 +1718,7 @@ function ChoresDisplay() {
                   onChangeText={(text) => setEditFormData({ ...editFormData, fertilizerAmount: text })}
                 />
 
+                <Text style={styles.inputLabel}>Every</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Recur Amount (number)"
@@ -1716,20 +1726,25 @@ function ChoresDisplay() {
                   onChangeText={(text) => setEditFormData({ ...editFormData, recurAmount: text })}
                   keyboardType="numeric"
                 />
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Recur Unit (e.g., days, weeks)"
-                  value={editFormData.recurUnit}
-                  onChangeText={(text) => setEditFormData({ ...editFormData, recurUnit: text })}
-                />
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="Next Date (YYYY-MM-DD)"
-                  value={editFormData.recurNextDate}
-                  onChangeText={(text) => setEditFormData({ ...editFormData, recurNextDate: text })}
-                />
+                <ScrollView style={styles.pickerContainer}>
+                  {[ 'day', 'week' ].map((unit) => (
+                    <TouchableOpacity
+                      key={unit}
+                      style={[
+                        styles.pickerOption,
+                        editFormData.recurUnit === unit && styles.pickerOptionSelected
+                      ]}
+                      onPress={() => setEditFormData({ ...editFormData, recurUnit: unit })}
+                    >
+                      <Text style={[
+                        styles.pickerOptionText,
+                        editFormData.recurUnit === unit && styles.pickerOptionTextSelected
+                      ]}>
+                        {unit}{editFormData.recurAmount === '1' ? '' : 's'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
                 <TextInput
                   style={[styles.input, styles.textArea]}
@@ -1764,7 +1779,6 @@ function ChoresDisplay() {
                       fertilizerAmount: '',
                       recurAmount: '',
                       recurUnit: '',
-                      recurNextDate: '',
                       notes: '',
                     })
                   }}
@@ -1783,7 +1797,7 @@ function ChoresDisplay() {
                   <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
                   <Text style={styles.listItemText}>
                     <Text style={styles.label}>
-                      <Text style={chore.recurNextDate && new Date(chore.recurNextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.recurNextDate ? new Date(chore.recurNextDate).toLocaleDateString('en-US') : 'unknown'}</Text> {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
+                      <Text style={chore.nextDate && new Date(chore.nextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : 'unknown'}</Text> {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
                     </Text>
                   </Text>
                 </TouchableOpacity>
@@ -1818,12 +1832,12 @@ function ChoresDisplay() {
                     )}
                     {chore.recurAmount && chore.recurUnit && (
                       <Text style={styles.listItemText}>
-                        <Text style={styles.label}>Recurrence:</Text> Every {chore.recurAmount} {chore.recurUnit}
+                        <Text style={styles.label}>Recurrence:</Text> Every {chore.recurAmount} {chore.recurUnit}{chore.recurAmount === 1 ? '' : 's'}
                       </Text>
                     )}
-                    {chore.recurNextDate && (
+                    {chore.nextDate && (
                       <Text style={styles.listItemText}>
-                        <Text style={styles.label}>Next Date:</Text> <Text style={chore.recurNextDate < new Date() ? styles.errorText : styles.listItemText}>{new Date(chore.recurNextDate).toLocaleDateString('en-US')}</Text>
+                        <Text style={styles.label}>Next Date:</Text> <Text style={chore.nextDate < new Date() ? styles.errorText : styles.listItemText}>{new Date(chore.nextDate).toLocaleDateString('en-US')}</Text>
                       </Text>
                     )}
                     {chore.notes && (
@@ -1835,6 +1849,130 @@ function ChoresDisplay() {
                 )}
               </>
             )}
+          </View>
+        )
+      })}
+    </View>
+  );
+}
+
+function ToDoDisplay() {
+  const [checkedIds, setCheckedIds] = React.useState<Set<string>>(new Set())
+
+  const {
+    data,
+    isLoading,
+    error,
+    isError,
+    refetch,
+    isRefetching
+  } = trpc.chores.list.useQuery({ q: ''}, {
+    refetchInterval: 30000, // Refetch every 30 seconds
+    retry: 1,
+  });
+
+  const createChoreLogMutation = trpc.choreLogs.create.useMutation({
+    onSuccess: () => {
+      refetch()
+    },
+  })
+
+  const handleCheckboxToggle = (chore: NonNullable<typeof data>['chores'][0]) => {
+    const isChecked = checkedIds.has(chore._id)
+
+    if (isChecked) {
+      // Uncheck - remove from checked set
+      setCheckedIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(chore._id)
+        return newSet
+      })
+    } else {
+      // Check - create chore log and add to checked set
+      setCheckedIds(prev => {
+        const newSet = new Set(prev)
+        newSet.add(chore._id)
+        return newSet
+      })
+
+      const timezoneOffset = new Date().getTimezoneOffset()
+      createChoreLogMutation.mutate({
+        choreId: chore._id,
+        fertilizerAmount: chore.fertilizerAmount || undefined,
+        notes: chore.notes || undefined,
+        clientTimezoneOffset: -timezoneOffset,
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.statusContainer}>
+        <Text style={styles.loadingText}>Loading to do items...</Text>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={[styles.statusContainer, styles.errorContainer]}>
+        <Text style={styles.errorText}>
+          Error: {error?.message || 'Unknown error'}
+        </Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refetch()}
+        >
+          <Text style={styles.buttonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.statusContainer, styles.successContainer]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>To Do</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={() => refetch()}
+          disabled={isRefetching}
+        >
+          <Text style={styles.buttonText}>
+            {isRefetching ? 'Refreshing...' : 'Refresh'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {!data?.chores?.length ? (
+        <Text style={styles.listItemText}>No to do items found.</Text>
+      ) : data?.chores?.map((chore, index) => {
+        const isChecked = checkedIds.has(chore._id)
+        const dateStr = chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : '(No date)'
+
+        return (
+          <View key={chore._id} style={styles.listItem}>
+            <View style={styles.todoRow}>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => handleCheckboxToggle(chore)}
+                disabled={createChoreLogMutation.isPending}
+              >
+                <Text style={styles.checkboxText}>{isChecked ? '☑' : '☐'}</Text>
+              </TouchableOpacity>
+              <View style={styles.todoContent}>
+                <Text style={styles.listItemText}>
+                  <Text style={styles.label}>
+                    {dateStr} {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
+                  </Text>
+                </Text>
+                {chore.fertilizerAmount && (
+                  <Text style={styles.listItemText}>
+                    <Text style={styles.label}>Amount:</Text> {chore.fertilizerAmount}
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
         )
       })}
@@ -2128,5 +2266,24 @@ const styles = StyleSheet.create({
   pickerOptionTextSelected: {
     color: 'white',
     fontWeight: '600',
+  },
+  todoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  todoContent: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  checkboxText: {
+    fontSize: 20,
+    color: '#155724',
   },
 });
