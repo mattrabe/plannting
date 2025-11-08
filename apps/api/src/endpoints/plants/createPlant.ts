@@ -22,6 +22,6 @@ export const createPlant = publicProcedure
       notes: input.notes,
     })
 
-    return plant.toObject()
+    return plant.toJSON()
   })
 

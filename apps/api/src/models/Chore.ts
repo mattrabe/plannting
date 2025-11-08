@@ -8,9 +8,10 @@ export interface IChore {
 
   recurAmount: number | null,
   recurUnit: string | null,
-  recurNextDate: Date | null,
 
   notes: string | null,
+
+  logs: mongoose.Types.ObjectId[],
 
   createdAt: Date,
   updatedAt: Date,
@@ -34,9 +35,11 @@ export const choreSchema = new mongoose.Schema<IChore>({
   },
   recurUnit: {
     type: String,
+    enum: [ 'day', 'week' ], //, 'month', 'year'],
   },
-  recurNextDate: {
-    type: Date,
+  logs: {
+    type: [mongoose.Schema.Types.ObjectId],
+    ref: 'ChoreLog',
   },
 }, { timestamps: true })
 

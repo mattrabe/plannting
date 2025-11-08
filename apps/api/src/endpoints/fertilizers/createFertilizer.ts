@@ -17,5 +17,5 @@ export const createFertilizer = publicProcedure
   .mutation(async ({ input }) => {
     const fertilizer = await Fertilizer.create(input)
 
-    return fertilizer.toObject()
+    return fertilizer.toJSON()
   })

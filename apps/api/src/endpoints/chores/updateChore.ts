@@ -44,6 +44,6 @@ export const updateChore = choreProcedure
 
     await ctx.chore.save()
 
-    return ctx.chore.toObject()
+    return ctx.chore.toJSON()
   })
 

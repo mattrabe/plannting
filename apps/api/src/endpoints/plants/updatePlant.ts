@@ -23,6 +23,6 @@ export const updatePlant = plantProcedure
 
     await ctx.plant.save()
 
-    return ctx.plant.toObject()
+    return ctx.plant.toJSON()
   })
 

@@ -35,6 +35,6 @@ export const createChore = publicProcedure
       $push: { chores: chore._id },
     })
 
-    return chore.toObject()
+    return chore.toJSON()
   })
 
