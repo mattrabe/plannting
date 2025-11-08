@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import { choreProcedure } from '../../procedures/choreProcedure'
-import { convertLocalToUTC } from '../../utils/dateUtils'
 
 export const updateChore = choreProcedure
   .input(z.object({
@@ -10,20 +9,11 @@ export const updateChore = choreProcedure
     fertilizerAmount: z.string().optional(),
     recurAmount: z.number().optional(),
     recurUnit: z.string().optional(),
-    recurNextDate: z.union([z.date(), z.string()]).optional(),
     notes: z.string().optional(),
     clientTimezoneOffset: z.number().optional(),
   }))
   .mutation(async ({ ctx, input }) => {
-    const { id, clientTimezoneOffset, recurNextDate, ...updateData } = input
-
-    // Convert recurNextDate to UTC if provided
-    if (recurNextDate !== undefined) {
-      const recurNextDateUTC = recurNextDate
-        ? convertLocalToUTC(recurNextDate, clientTimezoneOffset)
-        : null
-      ctx.chore.recurNextDate = recurNextDateUTC
-    }
+    const { id, ...updateData } = input
 
     // Update other fields
     if (updateData.fertilizer !== undefined) {

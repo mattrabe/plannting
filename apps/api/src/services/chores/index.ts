@@ -16,7 +16,6 @@ export const getChores = async ({
     const choresRaw = await Chore
       .find(query)
       .sort({
-        recurNextDate: 1,
         createdAt: -1,
       })
       .populate<{ fertilizer: IFertilizer }>({
@@ -41,10 +40,18 @@ export const getChores = async ({
       }
     }))
 
+    // Sort by nextDate ascending (undefined dates go to the end)
+    chores.sort((a, b) => {
+      if (!a.nextDate && !b.nextDate) return 0
+      if (!a.nextDate) return 1
+      if (!b.nextDate) return -1
+      return a.nextDate.getTime() - b.nextDate.getTime()
+    })
+
     return chores
 }
 
-export const calculateNextDate = (chore: Pick<Omit<IChore, 'logs'> & { logs: IChoreLog[] }, 'recurAmount' | 'recurUnit' | 'logs'>) => {
+export const calculateNextDate = (chore: Pick<Omit<IChore, 'logs'> & { logs: IChoreLog[] }, 'recurAmount' | 'recurUnit' | 'logs'>): Date | undefined => {
   if (!chore.recurAmount || !chore.recurUnit) {
     return undefined
   }
@@ -55,7 +62,8 @@ export const calculateNextDate = (chore: Pick<Omit<IChore, 'logs'> & { logs: ICh
     return new Date()
   }
 
-  const nextDate = lastDate.setDate(lastDate.getDate() + (chore.recurAmount * ((chore.recurUnit === 'day' && 1) || (chore.recurUnit === 'week' && 7) || 0)))
+  const nextDate = new Date(lastDate)
+  nextDate.setDate(nextDate.getDate() + (chore.recurAmount * ((chore.recurUnit === 'day' && 1) || (chore.recurUnit === 'week' && 7) || 0)))
 
   return nextDate
 }
