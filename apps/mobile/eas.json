@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 14.4.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "production": {
+      "node": "22.14.0",
+      "ios": {
+        "image": "latest"
+      },
+      "developmentClient": false,
+      "autoIncrement": true,
+      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.plannting.completecodesolutions.com" }
+    },
+    "on-demand": {
+      "extends": "production",
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.plannting.completecodesolutions.com" }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "abc123",
+        "appleTeamId": "X6H3QV6VCE"
+      }
+    }
+  }
+}
