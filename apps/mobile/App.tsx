@@ -605,7 +605,10 @@ function PlantsDisplay() {
   const [editingId, setEditingId] = React.useState<string | null>(null)
   const [showChoreForm, setShowChoreForm] = React.useState<string | null>(null) // plantId
   const [editingChoreId, setEditingChoreId] = React.useState<string | null>(null)
+  const [choreUseFertilizer, setChoreUseFertilizer] = React.useState(true)
+  const [editChoreUseFertilizer, setEditChoreUseFertilizer] = React.useState(true)
   const [choreFormData, setChoreFormData] = React.useState({
+    description: '',
     fertilizer: '',
     fertilizerAmount: '',
     recurAmount: '',
@@ -613,6 +616,7 @@ function PlantsDisplay() {
     notes: '',
   })
   const [editChoreFormData, setEditChoreFormData] = React.useState({
+    description: '',
     fertilizer: '',
     fertilizerAmount: '',
     recurAmount: '',
@@ -681,7 +685,9 @@ function PlantsDisplay() {
     onSuccess: () => {
       refetch()
       setShowChoreForm(null)
+      setChoreUseFertilizer(true)
       setChoreFormData({
+        description: '',
         fertilizer: '',
         fertilizerAmount: '',
         recurAmount: '',
@@ -695,7 +701,9 @@ function PlantsDisplay() {
     onSuccess: () => {
       refetch()
       setEditingChoreId(null)
+      setEditChoreUseFertilizer(true)
       setEditChoreFormData({
+        description: '',
         fertilizer: '',
         fertilizerAmount: '',
         recurAmount: '',
@@ -790,16 +798,23 @@ function PlantsDisplay() {
   }
 
   const handleChoreSubmit = (plantId: string) => {
-    if (!choreFormData.fertilizer) {
-      return
+    if (choreUseFertilizer) {
+      if (!choreFormData.fertilizer || !choreFormData.fertilizerAmount) {
+        return
+      }
+    } else {
+      if (!choreFormData.description) {
+        return
+      }
     }
 
     const timezoneOffset = new Date().getTimezoneOffset()
 
     createChoreMutation.mutate({
       plantId,
-      fertilizer: choreFormData.fertilizer,
-      fertilizerAmount: choreFormData.fertilizerAmount || undefined,
+      description: choreUseFertilizer ? undefined : (choreFormData.description || undefined),
+      fertilizer: choreUseFertilizer ? (choreFormData.fertilizer || undefined) : undefined,
+      fertilizerAmount: choreUseFertilizer ? (choreFormData.fertilizerAmount || undefined) : undefined,
       recurAmount: choreFormData.recurAmount ? parseFloat(choreFormData.recurAmount) : undefined,
       recurUnit: choreFormData.recurUnit || undefined,
       notes: choreFormData.notes || undefined,
@@ -812,12 +827,23 @@ function PlantsDisplay() {
       return
     }
 
+    if (editChoreUseFertilizer) {
+      if (!editChoreFormData.fertilizer || !editChoreFormData.fertilizerAmount) {
+        return
+      }
+    } else {
+      if (!editChoreFormData.description) {
+        return
+      }
+    }
+
     const timezoneOffset = new Date().getTimezoneOffset()
 
     updateChoreMutation.mutate({
       id: editingChoreId,
-      fertilizer: editChoreFormData.fertilizer || undefined,
-      fertilizerAmount: editChoreFormData.fertilizerAmount || undefined,
+      description: editChoreUseFertilizer ? undefined : (editChoreFormData.description || undefined),
+      fertilizer: editChoreUseFertilizer ? (editChoreFormData.fertilizer || undefined) : undefined,
+      fertilizerAmount: editChoreUseFertilizer ? (editChoreFormData.fertilizerAmount || undefined) : undefined,
       recurAmount: editChoreFormData.recurAmount ? parseFloat(editChoreFormData.recurAmount) : undefined,
       recurUnit: editChoreFormData.recurUnit || undefined,
       notes: editChoreFormData.notes || undefined,
@@ -827,8 +853,11 @@ function PlantsDisplay() {
 
   const handleChoreEditClick = (chore: NonNullable<typeof data>['plants'][0]['chores'][0]) => {
     setEditingChoreId(chore._id)
+    const hasFertilizer = !!(chore.fertilizer && chore.fertilizerAmount)
+    setEditChoreUseFertilizer(hasFertilizer)
     setEditChoreFormData({
-      fertilizer: chore.fertilizer._id,
+      description: chore.description || '',
+      fertilizer: chore.fertilizer?._id || '',
       fertilizerAmount: chore.fertilizerAmount || '',
       recurAmount: chore.recurAmount?.toString() || '',
       recurUnit: chore.recurUnit || '',
@@ -1056,9 +1085,11 @@ function PlantsDisplay() {
                       </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Planted At:</Text> {plant.plantedAt ? new Date(plant.plantedAt).toLocaleDateString('en-US') : 'unknown'}
-                    </Text>
+                    {plant.plantedAt && (
+                      <Text style={styles.listItemText}>
+                        <Text style={styles.label}>Planted {new Date(plant.plantedAt).toLocaleDateString('en-US')}</Text>
+                      </Text>
+                    )}
                     {plant.notes && (
                       <Text style={styles.listItemText}>
                         <Text style={styles.label}>Notes:</Text> {plant.notes}
@@ -1080,34 +1111,56 @@ function PlantsDisplay() {
                       <View style={styles.formContainer}>
                         <Text style={styles.formTitle}>Add New Chore</Text>
 
-                        <Text style={styles.inputLabel}>Fertilizer *</Text>
-                        <ScrollView style={styles.pickerContainer}>
-                          {fertilizersData?.fertilizers.map((fertilizer) => (
-                            <TouchableOpacity
-                              key={fertilizer._id}
-                              style={[
-                                styles.pickerOption,
-                                choreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
-                              ]}
-                              onPress={() => setChoreFormData({ ...choreFormData, fertilizer: fertilizer._id })}
-                            >
-                              <Text style={[
-                                styles.pickerOptionText,
-                                choreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
-                              ]}>
-                                {fertilizer.name}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
-                        </ScrollView>
+                        <View style={styles.switchContainer}>
+                          <Text style={styles.switchLabel}>Fertilizer</Text>
+                          <Switch
+                            value={choreUseFertilizer}
+                            onValueChange={(value) => setChoreUseFertilizer(value)}
+                          />
+                        </View>
 
-                        <Text style={styles.inputLabel}>Fertilizer Amount</Text>
-                        <TextInput
-                          style={styles.input}
-                          placeholder="Fertilizer Amount"
-                          value={choreFormData.fertilizerAmount}
-                          onChangeText={(text) => setChoreFormData({ ...choreFormData, fertilizerAmount: text })}
-                        />
+                        {choreUseFertilizer ? (
+                          <>
+                            <Text style={styles.inputLabel}>Fertilizer *</Text>
+                            <ScrollView style={styles.pickerContainer}>
+                              {fertilizersData?.fertilizers.map((fertilizer) => (
+                                <TouchableOpacity
+                                  key={fertilizer._id}
+                                  style={[
+                                    styles.pickerOption,
+                                    choreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                                  ]}
+                                  onPress={() => setChoreFormData({ ...choreFormData, fertilizer: fertilizer._id })}
+                                >
+                                  <Text style={[
+                                    styles.pickerOptionText,
+                                    choreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                                  ]}>
+                                    {fertilizer.name}
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+
+                            <Text style={styles.inputLabel}>Fertilizer Amount *</Text>
+                            <TextInput
+                              style={styles.input}
+                              placeholder="Fertilizer Amount"
+                              value={choreFormData.fertilizerAmount}
+                              onChangeText={(text) => setChoreFormData({ ...choreFormData, fertilizerAmount: text })}
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.inputLabel}>Description *</Text>
+                            <TextInput
+                              style={styles.input}
+                              placeholder="Description"
+                              value={choreFormData.description}
+                              onChangeText={(text) => setChoreFormData({ ...choreFormData, description: text })}
+                            />
+                          </>
+                        )}
 
                         <Text style={styles.inputLabel}>Every</Text>
                         <TextInput
@@ -1165,7 +1218,9 @@ function PlantsDisplay() {
                           style={[styles.cancelButton, createChoreMutation.isPending && styles.submitButtonDisabled]}
                           onPress={() => {
                             setShowChoreForm(null)
+                            setChoreUseFertilizer(true)
                             setChoreFormData({
+                              description: '',
                               fertilizer: '',
                               fertilizerAmount: '',
                               recurAmount: '',
@@ -1191,33 +1246,56 @@ function PlantsDisplay() {
                             <View style={styles.formContainer}>
                               <Text style={styles.formTitle}>Edit Chore</Text>
 
-                              <Text style={styles.inputLabel}>Fertilizer</Text>
-                              <ScrollView style={styles.pickerContainer}>
-                                {fertilizersData?.fertilizers.map((fertilizer) => (
-                                  <TouchableOpacity
-                                    key={fertilizer._id}
-                                    style={[
-                                      styles.pickerOption,
-                                      editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
-                                    ]}
-                                    onPress={() => setEditChoreFormData({ ...editChoreFormData, fertilizer: fertilizer._id })}
-                                  >
-                                    <Text style={[
-                                      styles.pickerOptionText,
-                                      editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
-                                    ]}>
-                                      {fertilizer.name}
-                                    </Text>
-                                  </TouchableOpacity>
-                                ))}
-                              </ScrollView>
+                              <View style={styles.switchContainer}>
+                                <Text style={styles.switchLabel}>Fertilizer</Text>
+                                <Switch
+                                  value={editChoreUseFertilizer}
+                                  onValueChange={(value) => setEditChoreUseFertilizer(value)}
+                                />
+                              </View>
 
-                              <TextInput
-                                style={styles.input}
-                                placeholder="Fertilizer Amount"
-                                value={editChoreFormData.fertilizerAmount}
-                                onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, fertilizerAmount: text })}
-                              />
+                              {editChoreUseFertilizer ? (
+                                <>
+                                  <Text style={styles.inputLabel}>Fertilizer *</Text>
+                                  <ScrollView style={styles.pickerContainer}>
+                                    {fertilizersData?.fertilizers.map((fertilizer) => (
+                                      <TouchableOpacity
+                                        key={fertilizer._id}
+                                        style={[
+                                          styles.pickerOption,
+                                          editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                                        ]}
+                                        onPress={() => setEditChoreFormData({ ...editChoreFormData, fertilizer: fertilizer._id })}
+                                      >
+                                        <Text style={[
+                                          styles.pickerOptionText,
+                                          editChoreFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                                        ]}>
+                                          {fertilizer.name}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    ))}
+                                  </ScrollView>
+
+                                  <Text style={styles.inputLabel}>Fertilizer Amount *</Text>
+                                  <TextInput
+                                    style={styles.input}
+                                    placeholder="Fertilizer Amount"
+                                    value={editChoreFormData.fertilizerAmount}
+                                    onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, fertilizerAmount: text })}
+                                  />
+                                </>
+                              ) : (
+                                <>
+                                  <Text style={styles.inputLabel}>Description *</Text>
+                                  <TextInput
+                                    style={styles.input}
+                                    placeholder="Description"
+                                    value={editChoreFormData.description}
+                                    onChangeText={(text) => setEditChoreFormData({ ...editChoreFormData, description: text })}
+                                  />
+                                </>
+                              )}
 
                               <Text style={styles.inputLabel}>Every</Text>
                               <TextInput
@@ -1275,7 +1353,9 @@ function PlantsDisplay() {
                                 style={[styles.cancelButton, updateChoreMutation.isPending && styles.submitButtonDisabled]}
                                 onPress={() => {
                                   setEditingChoreId(null)
+                                  setEditChoreUseFertilizer(true)
                                   setEditChoreFormData({
+                                    description: '',
                                     fertilizer: '',
                                     fertilizerAmount: '',
                                     recurAmount: '',
@@ -1292,7 +1372,7 @@ function PlantsDisplay() {
                             <>
                               <View style={styles.choreHeader}>
                                 <Text style={styles.listItemText}>
-                                  <Text style={styles.label}>{chore.fertilizer.name}:</Text> {chore.fertilizerAmount} every {chore.recurAmount} {chore.recurUnit}{chore.recurAmount === 1 ? '' : 's'}
+                                  <Text style={styles.label}>{(chore.fertilizer && `${chore.fertilizer.name}:`) || chore.description || 'Unknown'}</Text>{chore.fertilizerAmount && ` ${chore.fertilizerAmount}`}{chore.recurAmount ? ` every ${chore.recurAmount} ${chore.recurUnit}${chore.recurAmount === 1 ? '' : 's'}` : ''}
                                 </Text>
                               </View>
 
@@ -1348,8 +1428,11 @@ function ChoresDisplay() {
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
   const [showForm, setShowForm] = React.useState(false)
   const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [useFertilizer, setUseFertilizer] = React.useState(true)
+  const [editUseFertilizer, setEditUseFertilizer] = React.useState(true)
   const [formData, setFormData] = React.useState({
     plantId: '',
+    description: '',
     fertilizer: '',
     fertilizerAmount: '',
     recurAmount: '',
@@ -1357,6 +1440,7 @@ function ChoresDisplay() {
     notes: '',
   })
   const [editFormData, setEditFormData] = React.useState({
+    description: '',
     fertilizer: '',
     fertilizerAmount: '',
     recurAmount: '',
@@ -1388,8 +1472,10 @@ function ChoresDisplay() {
     onSuccess: () => {
       refetch()
       setShowForm(false)
+      setUseFertilizer(true)
       setFormData({
         plantId: '',
+        description: '',
         fertilizer: '',
         fertilizerAmount: '',
         recurAmount: '',
@@ -1403,7 +1489,9 @@ function ChoresDisplay() {
     onSuccess: () => {
       refetch()
       setEditingId(null)
+      setEditUseFertilizer(true)
       setEditFormData({
+        description: '',
         fertilizer: '',
         fertilizerAmount: '',
         recurAmount: '',
@@ -1420,16 +1508,27 @@ function ChoresDisplay() {
   })
 
   const handleSubmit = () => {
-    if (!formData.plantId || !formData.fertilizer) {
+    if (!formData.plantId) {
       return
+    }
+
+    if (useFertilizer) {
+      if (!formData.fertilizer || !formData.fertilizerAmount) {
+        return
+      }
+    } else {
+      if (!formData.description) {
+        return
+      }
     }
 
     const timezoneOffset = new Date().getTimezoneOffset()
 
     createMutation.mutate({
       plantId: formData.plantId,
-      fertilizer: formData.fertilizer,
-      fertilizerAmount: formData.fertilizerAmount || undefined,
+      description: useFertilizer ? undefined : (formData.description || undefined),
+      fertilizer: useFertilizer ? (formData.fertilizer || undefined) : undefined,
+      fertilizerAmount: useFertilizer ? (formData.fertilizerAmount || undefined) : undefined,
       recurAmount: formData.recurAmount ? parseFloat(formData.recurAmount) : undefined,
       recurUnit: formData.recurUnit || undefined,
       notes: formData.notes || undefined,
@@ -1442,12 +1541,23 @@ function ChoresDisplay() {
       return
     }
 
+    if (editUseFertilizer) {
+      if (!editFormData.fertilizer || !editFormData.fertilizerAmount) {
+        return
+      }
+    } else {
+      if (!editFormData.description) {
+        return
+      }
+    }
+
     const timezoneOffset = new Date().getTimezoneOffset()
 
     updateMutation.mutate({
       id: editingId,
-      fertilizer: editFormData.fertilizer || undefined,
-      fertilizerAmount: editFormData.fertilizerAmount || undefined,
+      description: editUseFertilizer ? undefined : (editFormData.description || undefined),
+      fertilizer: editUseFertilizer ? (editFormData.fertilizer || undefined) : undefined,
+      fertilizerAmount: editUseFertilizer ? (editFormData.fertilizerAmount || undefined) : undefined,
       recurAmount: editFormData.recurAmount ? parseFloat(editFormData.recurAmount) : undefined,
       recurUnit: editFormData.recurUnit || undefined,
       notes: editFormData.notes || undefined,
@@ -1457,7 +1567,10 @@ function ChoresDisplay() {
 
   const handleEditClick = (chore: NonNullable<typeof data>['chores'][0]) => {
     setEditingId(chore._id)
+    const hasFertilizer = !!((chore.fertilizer as any)?._id && chore.fertilizerAmount)
+    setEditUseFertilizer(hasFertilizer)
     setEditFormData({
+      description: chore.description || '',
       fertilizer: (chore.fertilizer as any)?._id || '',
       fertilizerAmount: chore.fertilizerAmount || '',
       recurAmount: chore.recurAmount?.toString() || '',
@@ -1578,33 +1691,56 @@ function ChoresDisplay() {
             ))}
           </ScrollView>
 
-          <Text style={styles.inputLabel}>Fertilizer *</Text>
-          <ScrollView style={styles.pickerContainer}>
-            {fertilizersData?.fertilizers.map((fertilizer) => (
-              <TouchableOpacity
-                key={fertilizer._id}
-                style={[
-                  styles.pickerOption,
-                  formData.fertilizer === fertilizer._id && styles.pickerOptionSelected
-                ]}
-                onPress={() => setFormData({ ...formData, fertilizer: fertilizer._id })}
-              >
-                <Text style={[
-                  styles.pickerOptionText,
-                  formData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
-                ]}>
-                  {fertilizer.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <View style={styles.switchContainer}>
+            <Text style={styles.switchLabel}>Fertilizer</Text>
+            <Switch
+              value={useFertilizer}
+              onValueChange={(value) => setUseFertilizer(value)}
+            />
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Fertilizer Amount"
-            value={formData.fertilizerAmount}
-            onChangeText={(text) => setFormData({ ...formData, fertilizerAmount: text })}
-          />
+          {useFertilizer ? (
+            <>
+              <Text style={styles.inputLabel}>Fertilizer *</Text>
+              <ScrollView style={styles.pickerContainer}>
+                {fertilizersData?.fertilizers.map((fertilizer) => (
+                  <TouchableOpacity
+                    key={fertilizer._id}
+                    style={[
+                      styles.pickerOption,
+                      formData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                    ]}
+                    onPress={() => setFormData({ ...formData, fertilizer: fertilizer._id })}
+                  >
+                    <Text style={[
+                      styles.pickerOptionText,
+                      formData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                    ]}>
+                      {fertilizer.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <Text style={styles.inputLabel}>Fertilizer Amount *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Fertilizer Amount"
+                value={formData.fertilizerAmount}
+                onChangeText={(text) => setFormData({ ...formData, fertilizerAmount: text })}
+              />
+            </>
+          ) : (
+            <>
+              <Text style={styles.inputLabel}>Description *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Description"
+                value={formData.description}
+                onChangeText={(text) => setFormData({ ...formData, description: text })}
+              />
+            </>
+          )}
 
           <Text style={styles.inputLabel}>Every</Text>
           <TextInput
@@ -1662,8 +1798,10 @@ function ChoresDisplay() {
             style={[styles.cancelButton, createMutation.isPending && styles.submitButtonDisabled]}
             onPress={() => {
               setShowForm(false)
+              setUseFertilizer(true)
               setFormData({
                 plantId: '',
+                description: '',
                 fertilizer: '',
                 fertilizerAmount: '',
                 recurAmount: '',
@@ -1690,33 +1828,56 @@ function ChoresDisplay() {
               <View style={styles.formContainer}>
                 <Text style={styles.formTitle}>Edit Chore</Text>
 
-                <Text style={styles.inputLabel}>Fertilizer</Text>
-                <ScrollView style={styles.pickerContainer}>
-                  {fertilizersData?.fertilizers.map((fertilizer) => (
-                    <TouchableOpacity
-                      key={fertilizer._id}
-                      style={[
-                        styles.pickerOption,
-                        editFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
-                      ]}
-                      onPress={() => setEditFormData({ ...editFormData, fertilizer: fertilizer._id })}
-                    >
-                      <Text style={[
-                        styles.pickerOptionText,
-                        editFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
-                      ]}>
-                        {fertilizer.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={styles.switchContainer}>
+                  <Text style={styles.switchLabel}>Fertilizer</Text>
+                  <Switch
+                    value={editUseFertilizer}
+                    onValueChange={(value) => setEditUseFertilizer(value)}
+                  />
+                </View>
 
-                <TextInput
-                  style={styles.input}
-                  placeholder="Fertilizer Amount"
-                  value={editFormData.fertilizerAmount}
-                  onChangeText={(text) => setEditFormData({ ...editFormData, fertilizerAmount: text })}
-                />
+                {editUseFertilizer ? (
+                  <>
+                    <Text style={styles.inputLabel}>Fertilizer *</Text>
+                    <ScrollView style={styles.pickerContainer}>
+                      {fertilizersData?.fertilizers.map((fertilizer) => (
+                        <TouchableOpacity
+                          key={fertilizer._id}
+                          style={[
+                            styles.pickerOption,
+                            editFormData.fertilizer === fertilizer._id && styles.pickerOptionSelected
+                          ]}
+                          onPress={() => setEditFormData({ ...editFormData, fertilizer: fertilizer._id })}
+                        >
+                          <Text style={[
+                            styles.pickerOptionText,
+                            editFormData.fertilizer === fertilizer._id && styles.pickerOptionTextSelected
+                          ]}>
+                            {fertilizer.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    <Text style={styles.inputLabel}>Fertilizer Amount *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Fertilizer Amount"
+                      value={editFormData.fertilizerAmount}
+                      onChangeText={(text) => setEditFormData({ ...editFormData, fertilizerAmount: text })}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.inputLabel}>Description *</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Description"
+                      value={editFormData.description}
+                      onChangeText={(text) => setEditFormData({ ...editFormData, description: text })}
+                    />
+                  </>
+                )}
 
                 <Text style={styles.inputLabel}>Every</Text>
                 <TextInput
@@ -1774,7 +1935,9 @@ function ChoresDisplay() {
                   style={[styles.cancelButton, updateMutation.isPending && styles.submitButtonDisabled]}
                   onPress={() => {
                     setEditingId(null)
+                    setEditUseFertilizer(true)
                     setEditFormData({
+                      description: '',
                       fertilizer: '',
                       fertilizerAmount: '',
                       recurAmount: '',
@@ -1797,7 +1960,7 @@ function ChoresDisplay() {
                   <Text style={styles.arrowIcon}>{isExpanded ? '▼' : '▶'}</Text>
                   <Text style={styles.listItemText}>
                     <Text style={styles.label}>
-                      <Text style={chore.nextDate && new Date(chore.nextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : 'unknown'}</Text> {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
+                      <Text style={chore.nextDate && new Date(chore.nextDate) < new Date() ? styles.errorText : styles.listItemText}>{chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : 'unknown'}</Text> {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || chore.description || 'Unknown Fertilizer'}
                     </Text>
                   </Text>
                 </TouchableOpacity>
@@ -1823,7 +1986,10 @@ function ChoresDisplay() {
                       <Text style={styles.label}>Plant:</Text> {chore.plant?.name || 'Unknown'}
                     </Text>
                     <Text style={styles.listItemText}>
-                      <Text style={styles.label}>Fertilizer:</Text> {chore.fertilizer?.name || 'Unknown'}
+                      <Text style={styles.label}>Fertilizer:</Text> {chore.fertilizer?.name || ''}
+                    </Text>
+                    <Text style={styles.listItemText}>
+                      <Text style={styles.label}>Description:</Text> {chore.description || ''}
                     </Text>
                     {chore.fertilizerAmount && (
                       <Text style={styles.listItemText}>
@@ -1963,12 +2129,12 @@ function ToDoDisplay() {
               <View style={styles.todoContent}>
                 <Text style={styles.listItemText}>
                   <Text style={styles.label}>
-                    {dateStr} {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || 'Unknown Fertilizer'}
+                    {dateStr} {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || chore.description || 'Unknown Fertilizer'}
                   </Text>
                 </Text>
                 {chore.fertilizerAmount && (
                   <Text style={styles.listItemText}>
-                    <Text style={styles.label}>Amount:</Text> {chore.fertilizerAmount}
+                    {chore.fertilizerAmount}
                   </Text>
                 )}
               </View>

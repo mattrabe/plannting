@@ -18,7 +18,7 @@ export const getChores = async ({
       .sort({
         createdAt: -1,
       })
-      .populate<{ fertilizer: IFertilizer }>({
+      .populate<{ fertilizer?: IFertilizer }>({
         path: 'fertilizer',
       })
       .populate<{ logs: IChoreLog[] }>({

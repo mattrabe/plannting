@@ -5,6 +5,7 @@ import { choreProcedure } from '../../procedures/choreProcedure'
 export const updateChore = choreProcedure
   .input(z.object({
     id: z.string(),
+    description: z.string().optional(),
     fertilizer: z.string().optional(),
     fertilizerAmount: z.string().optional(),
     recurAmount: z.number().optional(),
@@ -16,6 +17,9 @@ export const updateChore = choreProcedure
     const { id, ...updateData } = input
 
     // Update other fields
+    if (updateData.description !== undefined) {
+      ctx.chore.description = updateData.description ?? null
+    }
     if (updateData.fertilizer !== undefined) {
       ctx.chore.fertilizer = updateData.fertilizer as any
     }

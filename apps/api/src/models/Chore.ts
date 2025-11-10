@@ -3,7 +3,9 @@ import mongoose from 'mongoose'
 export interface IChore {
   _id: string,
 
-  fertilizer: mongoose.Types.ObjectId,
+  description: string | null,
+
+  fertilizer: mongoose.Types.ObjectId | null,
   fertilizerAmount: string | null,
 
   recurAmount: number | null,
@@ -20,12 +22,14 @@ export interface IChore {
 // export type DocIChore = mongoose.Document & Omit<IChore, '_id' | 'createdAt' | 'updatedAt'>
 
 export const choreSchema = new mongoose.Schema<IChore>({
-  notes: {
+  description: {
     type: String,
+    default: null,
   },
   fertilizer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Fertilizer',
+    default: null,
   },
   fertilizerAmount: {
     type: String,
@@ -36,6 +40,9 @@ export const choreSchema = new mongoose.Schema<IChore>({
   recurUnit: {
     type: String,
     enum: [ 'day', 'week' ], //, 'month', 'year'],
+  },
+  notes: {
+    type: String,
   },
   logs: {
     type: [mongoose.Schema.Types.ObjectId],

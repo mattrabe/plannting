@@ -28,7 +28,7 @@ export const listPlants = publicProcedure
         plantedAt: -1,
         createdAt: -1,
       })
-      .populate<{ chores: (Omit<IChore, 'logs'> & { fertilizer: IFertilizer, logs: IChoreLog[] })[] }>({
+      .populate<{ chores: (Omit<IChore, 'logs' | 'fertilizer'> & { fertilizer?: IFertilizer, logs: IChoreLog[] })[] }>({
         path: 'chores',
         populate: [
           { path: 'fertilizer' },
