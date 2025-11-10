@@ -7,7 +7,8 @@ import { publicProcedure } from '../../procedures/publicProcedure'
 export const createChore = publicProcedure
   .input(z.object({
     plantId: z.string(),
-    fertilizer: z.string(),
+    description: z.string().optional(),
+    fertilizer: z.string().optional(),
     fertilizerAmount: z.string().optional(),
     recurAmount: z.number().optional(),
     recurUnit: z.string().optional(),

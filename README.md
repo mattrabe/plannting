@@ -41,15 +41,11 @@ npm run dev
 **API Server (Express.js)**
 ```bash
 npm run dev:api
-# or
-cd apps/api && npm run dev
 ```
 
 **Mobile App (Expo)**
 ```bash
 npm run dev:mobile
-# or
-cd apps/mobile && npm run start
 ```
 
 ### Building
@@ -92,11 +88,6 @@ npm run lint
   - MongoDB connection status monitoring via API
   - Native mobile interface
   - Real-time updates
-
-### Shared Package (`packages/shared`)
-- **MOVED!**: This was moved into duplicate code in the separate apps for now.
-- **Purpose**: Shared TypeScript types and utilities
-- **Exports**: Common interfaces like `Config`
 
 ## Development Notes
 
