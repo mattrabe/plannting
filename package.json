@@ -13,6 +13,8 @@
     "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/mobile",
     "build:api": "npm run build --workspace=apps/api",
     "build:mobile": "npm run build --workspace=apps/mobile",
+    "build:mobile:development-build": "npm run build:development:build --workspace=apps/mobile",
+    "build:mobile:update": "npm run build:development:update --workspace=apps/mobile",
     "start": "concurrently \"npm run start:api\" \"npm run start:mobile\"",
     "start:api": "npm run start --workspace=apps/api",
     "start:mobile": "npm run start --workspace=apps/mobile",

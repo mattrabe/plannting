@@ -7,14 +7,20 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "build:development:add-device": "eas device:create",
+    "build:development:list-devices": "eas device:list",
+    "build:development:build": "eas build --clear-cache --platform ios --profile on-demand",
+    "build:development:update": "mv .env .env.bak && mv .env.production .env && eas update --clear-cache --platform ios && mv .env .env.production && mv .env.bak .env"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.89.0",
     "@trpc/client": "^11.5.1",
     "@trpc/react-query": "^11.5.1",
     "expo": "~54.0.10",
+    "expo-dev-client": "~6.0.17",
     "expo-status-bar": "~3.0.8",
+    "expo-updates": "~29.0.12",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",

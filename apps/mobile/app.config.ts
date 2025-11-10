@@ -1,8 +1,12 @@
-{
+import { version } from './package.json'
+
+export default {
   "expo": {
-    "name": "plannting",
+    "name": "Plannting",
     "slug": "plannting",
-    "version": "1.0.0",
+    "version": version.replace(/^([0-9]*\.[0-9]*\.[0-9]*).*/, '$1'),
+    runtimeVersion: '1',
+    scheme: 'plannting',
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,6 +17,8 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "bundleIdentifier": "com.completecodesolutions.plannting",
+      "infoPlist": { "ITSAppUsesNonExemptEncryption": false },
       "supportsTablet": true
     },
     "android": {
@@ -25,6 +31,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": { "eas": { "projectId": "9fcdb798-fbdf-45da-bf80-9f6c51c527b3" } },
+    "updates": { "url": "https://u.expo.dev/9fcdb798-fbdf-45da-bf80-9f6c51c527b3" }
   }
 }
