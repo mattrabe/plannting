@@ -8,13 +8,13 @@ import { convertLocalToUTC } from '../../utils/dateUtils'
 export const createPlant = publicProcedure
   .input(z.object({
     name: z.string(),
-    plantedAt: z.union([z.date(), z.string()]),
+    plantedAt: z.union([z.date(), z.string()]).optional(),
     notes: z.string().optional(),
     clientTimezoneOffset: z.number().optional(), // Offset in minutes from UTC
   }))
   .mutation(async ({ input }) => {
     // Convert the date from client's local timezone to UTC
-    const plantedAtUTC = convertLocalToUTC(input.plantedAt, input.clientTimezoneOffset)
+    const plantedAtUTC = input.plantedAt ? convertLocalToUTC(input.plantedAt, input.clientTimezoneOffset) : null
 
     const plant = await Plant.create({
       name: input.name,

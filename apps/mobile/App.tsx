@@ -182,23 +182,19 @@ function FertilizersDisplay() {
   })
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.nitrogen || !formData.phosphorus || !formData.potassium) {
-      return
-    }
-
     createMutation.mutate({
       name: formData.name,
       type: formData.type,
       isOrganic: formData.isOrganic,
       notes: formData.notes || undefined,
-      nitrogen: parseFloat(formData.nitrogen),
-      phosphorus: parseFloat(formData.phosphorus),
-      potassium: parseFloat(formData.potassium),
+      nitrogen: formData.nitrogen ? parseFloat(formData.nitrogen) : undefined,
+      phosphorus: formData.phosphorus ? parseFloat(formData.phosphorus) : undefined,
+      potassium: formData.potassium ? parseFloat(formData.potassium) : undefined,
     })
   }
 
   const handleEditSubmit = () => {
-    if (!editingId || !editFormData.name || !editFormData.nitrogen || !editFormData.phosphorus || !editFormData.potassium) {
+    if (!editingId) {
       return
     }
 
@@ -208,9 +204,9 @@ function FertilizersDisplay() {
       type: editFormData.type,
       isOrganic: editFormData.isOrganic,
       notes: editFormData.notes || undefined,
-      nitrogen: parseFloat(editFormData.nitrogen),
-      phosphorus: parseFloat(editFormData.phosphorus),
-      potassium: parseFloat(editFormData.potassium),
+      nitrogen: editFormData.nitrogen ? parseFloat(editFormData.nitrogen) : undefined,
+      phosphorus: editFormData.phosphorus ? parseFloat(editFormData.phosphorus) : undefined,
+      potassium: editFormData.potassium ? parseFloat(editFormData.potassium) : undefined,
     })
   }
 
@@ -720,10 +716,6 @@ function PlantsDisplay() {
   })
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.plantedAt) {
-      return
-    }
-
     // Get timezone offset in minutes (negative for timezones ahead of UTC)
     const timezoneOffset = new Date().getTimezoneOffset()
 
@@ -736,7 +728,7 @@ function PlantsDisplay() {
   }
 
   const handleEditSubmit = () => {
-    if (!editingId || !editFormData.name || !editFormData.plantedAt) {
+    if (!editingId) {
       return
     }
 
@@ -798,16 +790,6 @@ function PlantsDisplay() {
   }
 
   const handleChoreSubmit = (plantId: string) => {
-    if (choreUseFertilizer) {
-      if (!choreFormData.fertilizer || !choreFormData.fertilizerAmount) {
-        return
-      }
-    } else {
-      if (!choreFormData.description) {
-        return
-      }
-    }
-
     const timezoneOffset = new Date().getTimezoneOffset()
 
     createChoreMutation.mutate({
@@ -1512,16 +1494,6 @@ function ChoresDisplay() {
       return
     }
 
-    if (useFertilizer) {
-      if (!formData.fertilizer || !formData.fertilizerAmount) {
-        return
-      }
-    } else {
-      if (!formData.description) {
-        return
-      }
-    }
-
     const timezoneOffset = new Date().getTimezoneOffset()
 
     createMutation.mutate({
@@ -2162,8 +2134,8 @@ function ToDoDisplay() {
         if (nextDate) {
           nextDate.setHours(0, 0, 0, 0)
         }
-        const isFutureDate = nextDate && nextDate > today
-        const isPastDate = nextDate && nextDate < today
+        const isFutureDate = nextDate && ((nextDate.getTime() - today.getTime()) > (60 * 60 * 24 * 1000))
+        const isPastDate = nextDate && ((today.getTime() - nextDate.getTime()) > (60 * 60 * 24 * 1000))
 
         return (
           <View key={chore._id} style={styles.listItem}>

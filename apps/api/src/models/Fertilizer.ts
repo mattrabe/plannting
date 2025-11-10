@@ -6,9 +6,9 @@ export interface IFertilizer {
   type: 'liquid' | 'granules',
   isOrganic: boolean,
   notes: string | null,
-  nitrogen: number,
-  phosphorus: number,
-  potassium: number,
+  nitrogen: number | null,
+  phosphorus: number | null,
+  potassium: number | null,
   createdAt: Date,
   updatedAt: Date,
   deletedAt: Date | null,
@@ -36,15 +36,12 @@ export const fertilizerSchema = new mongoose.Schema<IFertilizer>({
   },
   nitrogen: {
     type: Number,
-    required: true,
   },
   phosphorus: {
     type: Number,
-    required: true,
   },
   potassium: {
     type: Number,
-    required: true,
   },
 }, { timestamps: true })
 
