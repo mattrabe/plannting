@@ -10,9 +10,9 @@ export const updateFertilizer = fertilizerProcedure
     type: z.enum(['liquid', 'granules']),
     isOrganic: z.boolean(),
     notes: z.string().optional(),
-    nitrogen: z.number(),
-    phosphorus: z.number(),
-    potassium: z.number(),
+    nitrogen: z.number().optional(),
+    phosphorus: z.number().optional(),
+    potassium: z.number().optional(),
   }))
   .mutation(async ({ ctx, input }) => {
     const fertilizer = await ctx.fertilizer.updateOne({
