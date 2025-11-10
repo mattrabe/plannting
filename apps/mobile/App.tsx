@@ -2155,7 +2155,7 @@ function ToDoDisplay() {
         const isChecked = checkedIds.has(chore._id)
         const dateStr = chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : '(No date)'
 
-        // Check if the date is greater than today (future date)
+        // Check if the date is greater than today (future date) or before today (past date)
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         const nextDate = chore.nextDate ? new Date(chore.nextDate) : null
@@ -2163,6 +2163,7 @@ function ToDoDisplay() {
           nextDate.setHours(0, 0, 0, 0)
         }
         const isFutureDate = nextDate && nextDate > today
+        const isPastDate = nextDate && nextDate < today
 
         return (
           <View key={chore._id} style={styles.listItem}>
@@ -2177,7 +2178,7 @@ function ToDoDisplay() {
               <View style={styles.todoContent}>
                 <Text style={[styles.listItemText, isFutureDate && styles.futureTodoText]}>
                   <Text style={[styles.label, isFutureDate && styles.futureTodoText]}>
-                    {dateStr} {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || chore.description || 'Unknown Fertilizer'}
+                    <Text style={isPastDate ? styles.errorText : undefined}>{dateStr}</Text>{' '}{chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || chore.description || 'Unknown Fertilizer'}
                   </Text>
                 </Text>
                 {chore.fertilizerAmount && (
