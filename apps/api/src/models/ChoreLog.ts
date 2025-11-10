@@ -20,7 +20,6 @@ export const choreLogSchema = new mongoose.Schema<IChoreLog>({
   },
   fertilizerAmount: {
     type: String,
-    required: true,
   },
   doneAt: {
     type: Date,

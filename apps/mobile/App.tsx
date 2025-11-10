@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Switch, Alert } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Switch, Alert, Modal } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { trpc } from './lib/trpc'
@@ -1405,7 +1405,7 @@ function PlantsDisplay() {
                               </Text>
                               {chore.logs.map((log) => (
                                 <Text key={log._id} style={styles.listItemText}>
-                                  {log.doneAt ? new Date(log.doneAt).toLocaleDateString('en-US') : 'unknown'}
+                                  <Text style={styles.label}>{log.doneAt ? new Date(log.doneAt).toLocaleDateString('en-US') : 'unknown'}</Text>{log.fertilizerAmount ? ` ${log.fertilizerAmount}` : ''}{log.notes ? ` (${log.notes})` : ''}
                                 </Text>
                               ))}
                             </>
@@ -2024,6 +2024,13 @@ function ChoresDisplay() {
 
 function ToDoDisplay() {
   const [checkedIds, setCheckedIds] = React.useState<Set<string>>(new Set())
+  const [modalVisible, setModalVisible] = React.useState(false)
+  const [selectedChore, setSelectedChore] = React.useState<NonNullable<typeof data>['chores'][0] | null>(null)
+  const [choreLogFormData, setChoreLogFormData] = React.useState({
+    fertilizerAmount: '',
+    doneAt: '',
+    notes: '',
+  })
 
   const {
     data,
@@ -2038,8 +2045,21 @@ function ToDoDisplay() {
   });
 
   const createChoreLogMutation = trpc.choreLogs.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       refetch()
+      setModalVisible(false)
+      // Remove from checked set after successful creation to uncheck the checkbox
+      setCheckedIds(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(variables.choreId)
+        return newSet
+      })
+      setSelectedChore(null)
+      setChoreLogFormData({
+        fertilizerAmount: '',
+        doneAt: '',
+        notes: '',
+      })
     },
   })
 
@@ -2054,21 +2074,40 @@ function ToDoDisplay() {
         return newSet
       })
     } else {
-      // Check - create chore log and add to checked set
-      setCheckedIds(prev => {
-        const newSet = new Set(prev)
-        newSet.add(chore._id)
-        return newSet
+      // Check - open modal with form
+      setSelectedChore(chore)
+      setChoreLogFormData({
+        fertilizerAmount: chore.fertilizerAmount || '',
+        doneAt: new Date().toISOString().split('T')[0], // Default to today in YYYY-MM-DD format
+        notes: '',
       })
-
-      const timezoneOffset = new Date().getTimezoneOffset()
-      createChoreLogMutation.mutate({
-        choreId: chore._id,
-        fertilizerAmount: chore.fertilizerAmount || undefined,
-        notes: chore.notes || undefined,
-        clientTimezoneOffset: -timezoneOffset,
-      })
+      setModalVisible(true)
     }
+  }
+
+  const handleChoreLogSubmit = () => {
+    if (!selectedChore) {
+      return
+    }
+
+    const timezoneOffset = new Date().getTimezoneOffset()
+    createChoreLogMutation.mutate({
+      choreId: selectedChore._id,
+      fertilizerAmount: selectedChore.fertilizerAmount ? (choreLogFormData.fertilizerAmount || undefined) : undefined,
+      doneAt: choreLogFormData.doneAt || undefined,
+      notes: choreLogFormData.notes || undefined,
+      clientTimezoneOffset: -timezoneOffset,
+    })
+  }
+
+  const handleModalCancel = () => {
+    setModalVisible(false)
+    setSelectedChore(null)
+    setChoreLogFormData({
+      fertilizerAmount: '',
+      doneAt: '',
+      notes: '',
+    })
   }
 
   if (isLoading) {
@@ -2116,6 +2155,15 @@ function ToDoDisplay() {
         const isChecked = checkedIds.has(chore._id)
         const dateStr = chore.nextDate ? new Date(chore.nextDate).toLocaleDateString('en-US') : '(No date)'
 
+        // Check if the date is greater than today (future date)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const nextDate = chore.nextDate ? new Date(chore.nextDate) : null
+        if (nextDate) {
+          nextDate.setHours(0, 0, 0, 0)
+        }
+        const isFutureDate = nextDate && nextDate > today
+
         return (
           <View key={chore._id} style={styles.listItem}>
             <View style={styles.todoRow}>
@@ -2124,16 +2172,16 @@ function ToDoDisplay() {
                 onPress={() => handleCheckboxToggle(chore)}
                 disabled={createChoreLogMutation.isPending}
               >
-                <Text style={styles.checkboxText}>{isChecked ? '☑' : '☐'}</Text>
+                <Text style={[styles.checkboxText, isFutureDate && styles.futureTodoText]}>{isChecked ? '☑' : '☐'}</Text>
               </TouchableOpacity>
               <View style={styles.todoContent}>
-                <Text style={styles.listItemText}>
-                  <Text style={styles.label}>
+                <Text style={[styles.listItemText, isFutureDate && styles.futureTodoText]}>
+                  <Text style={[styles.label, isFutureDate && styles.futureTodoText]}>
                     {dateStr} {chore.plant?.name || 'Unknown Plant'} - {chore.fertilizer?.name || chore.description || 'Unknown Fertilizer'}
                   </Text>
                 </Text>
                 {chore.fertilizerAmount && (
-                  <Text style={styles.listItemText}>
+                  <Text style={[styles.listItemText, isFutureDate && styles.futureTodoText]}>
                     {chore.fertilizerAmount}
                   </Text>
                 )}
@@ -2142,6 +2190,75 @@ function ToDoDisplay() {
           </View>
         )
       })}
+
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={handleModalCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView>
+              <Text style={styles.formTitle}>Complete Chore</Text>
+
+              {selectedChore?.fertilizerAmount && (
+                <>
+                  <Text style={styles.inputLabel}>Fertilizer Amount</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Fertilizer Amount"
+                    value={choreLogFormData.fertilizerAmount}
+                    onChangeText={(text) => setChoreLogFormData({ ...choreLogFormData, fertilizerAmount: text })}
+                  />
+                </>
+              )}
+
+              <Text style={styles.inputLabel}>Done At</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="YYYY-MM-DD"
+                value={choreLogFormData.doneAt}
+                onChangeText={(text) => setChoreLogFormData({ ...choreLogFormData, doneAt: text })}
+              />
+
+              <Text style={styles.inputLabel}>Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Notes (optional)"
+                value={choreLogFormData.notes}
+                onChangeText={(text) => setChoreLogFormData({ ...choreLogFormData, notes: text })}
+                multiline
+                numberOfLines={3}
+              />
+
+              {createChoreLogMutation.error && (
+                <Text style={styles.errorText}>
+                  Error: {createChoreLogMutation.error.message}
+                </Text>
+              )}
+
+              <TouchableOpacity
+                style={[styles.submitButton, createChoreLogMutation.isPending && styles.submitButtonDisabled]}
+                onPress={handleChoreLogSubmit}
+                disabled={createChoreLogMutation.isPending}
+              >
+                <Text style={styles.buttonText}>
+                  {createChoreLogMutation.isPending ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.cancelButton, createChoreLogMutation.isPending && styles.submitButtonDisabled]}
+                onPress={handleModalCancel}
+                disabled={createChoreLogMutation.isPending}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -2441,6 +2558,9 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 8,
   },
+  futureTodoText: {
+    opacity: 0.75,
+  },
   checkbox: {
     width: 24,
     height: 24,
@@ -2451,5 +2571,19 @@ const styles = StyleSheet.create({
   checkboxText: {
     fontSize: 20,
     color: '#155724',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    width: '90%',
+    maxWidth: 500,
+    maxHeight: '80%',
   },
 });
