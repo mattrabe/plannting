@@ -40,11 +40,11 @@ export const getChores = async ({
       }
     }))
 
-    // Sort by nextDate ascending (undefined dates go to the end)
+    // Sort by nextDate ascending (undefined dates go to the top)
     chores.sort((a, b) => {
       if (!a.nextDate && !b.nextDate) return 0
-      if (!a.nextDate) return 1
-      if (!b.nextDate) return -1
+      if (!a.nextDate) return -1  // a comes first (no date at top)
+      if (!b.nextDate) return 1   // b comes first (no date at top)
       return a.nextDate.getTime() - b.nextDate.getTime()
     })
 
